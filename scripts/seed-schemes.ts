@@ -18,14 +18,25 @@ const generateDescription = (title: string, category: string, details: string) =
     if (category === "Social Welfare") categorySpecificFocus = "Serving the most vulnerable, this program ensures social justice, pensions, and basic safety nets.";
 
     return `The ${title} is a signature government initiative designed to revolutionize the ${category} sector by providing targeted support to citizens across the nation. This comprehensive scheme is built on the pillars of accessibility, transparency, and impact, ensuring that the benefits reach every eligible individual at the last mile. 
-
+ 
 Historically, individuals in the ${category} domain have faced significant systemic hurdles, ranging from high costs of entry to limited resources for growth. The ${title} addresses these root causes by offering a multi-faceted approach. Whether it's through direct financial transfers, subsidized services, or infrastructure support, the scheme creates a robust safety net that empowers beneficiaries to achieve their potential.
-
+ 
 At its core, the ${title} is about ${details}. This means not just providing a one-time relief, but building a sustainable ecosystem where individuals can thrive. ${categorySpecificFocus} The scheme's ${category} orientation ensures that it is tailored to the specific local needs of diverse demographic groups.
-
+ 
 Furthermore, the implementation of ${title} leverages state-of-the-art digital infrastructure, such as the Direct Benefit Transfer (DBT) mechanism and Aadhaar-linked verification, to eliminate leakages and minimize bureaucratic delays. Applicants can track their status in real-time, ensuring a sense of ownership and accountability. The government has committed substantial budgetary allocations to ensure the scheme's longevity and scalability.
-
+ 
 By participating in the ${title}, citizens are not just beneficiaries; they are partners in the nation's journey towards self-reliance (Atmanirbharta). The success stories flowing from this initiative highlight its role in transforming lives and providing a platform for sustainable growth. Keywords: ${title} benefits, ${category} government scheme, eligibility for ${title}, how to apply for ${title}, direct benefit transfer, ${category} assistance India, central government initiatives 2024.`;
+};
+
+const getRandomCastes = () => {
+    const allCastes = ["General", "OBC", "SC", "ST"];
+    // 60% chance of being for everyone
+    if (Math.random() > 0.4) return allCastes;
+    
+    // Pick 1 to 3 random castes
+    const count = Math.floor(Math.random() * 3) + 1;
+    const shuffled = [...allCastes].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count).sort();
 };
 
 const educationSchemes = [
@@ -63,7 +74,7 @@ const educationSchemes = [
     ageMin: 15,
     ageMax: 30,
     incomeLimit: 600000,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["education", "scholarship", "student"]
@@ -104,7 +115,7 @@ const healthcareSchemes = [
     ageMin: 0,
     ageMax: 100,
     incomeLimit: 250000,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["health", "medical", "insurance"]
@@ -135,7 +146,7 @@ const agricultureSchemes = [
     ageMin: 18,
     ageMax: 60,
     incomeLimit: null,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Rural",
     status: "active",
     tags: ["agriculture", "farmer", "subsidy"]
@@ -176,7 +187,7 @@ const businessSchemes = [
     ageMin: 18,
     ageMax: 65,
     incomeLimit: null,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["business", "msme", "entrepreneur", "startup"]
@@ -207,7 +218,7 @@ const housingSchemes = [
     ageMin: 18,
     ageMax: 70,
     incomeLimit: 600000,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["housing", "home", "subsidy", "construction"]
@@ -238,7 +249,7 @@ const technologySchemes = [
     ageMin: 18,
     ageMax: 60,
     incomeLimit: null,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["technology", "digital", "innovation", "it"]
@@ -269,7 +280,7 @@ const financeSchemes = [
     ageMin: 0,
     ageMax: 100,
     incomeLimit: null,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["finance", "savings", "insurance", "pension"]
@@ -300,7 +311,7 @@ const socialWelfareSchemes = [
     ageMin: 0,
     ageMax: 100,
     incomeLimit: 100000,
-    caste: ["General", "OBC", "SC", "ST"],
+    caste: getRandomCastes(),
     residence: "Both",
     status: "active",
     tags: ["social", "welfare", "pension", "poor"]

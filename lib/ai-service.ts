@@ -96,29 +96,13 @@ export class AIService {
             incomeLimit: s.incomeLimit
         }));
 
-        const prompt = `
-        Task: Rank the following government schemes for a user based on their profile.
-        
-        User Profile:
-        ${JSON.stringify(userProfile, null, 2)}
-        
-        Available Schemes:
-        ${JSON.stringify(simplifiedSchemes, null, 2)}
-        
-        Instructions:
-        1. Compare user attributes (age, income, category, occupation) with scheme eligibility.
-        2. Assign a score from 0-100 (100 = perfect match, 0 = not eligible).
-        3. Explain the reason briefly.
-        
-        Output strictly in JSON format as a list:
-        [
-            {
-                "schemeId": "id",
-                "score": 95,
-                "reason": "Matches age and income criteria perfectly."
-            }
-        ]
-        `;
+        const prompt = `Rank these govt schemes for user eligibility.
+User Profile: ${JSON.stringify(userProfile)}
+Schemes: ${JSON.stringify(simplifiedSchemes)}
+Instructions:
+1. Compare user age, income, category, occupation with scheme criteria.
+2. Score 0-100.
+Output compact JSON array: [{"schemeId":"id","score":num,"reason":"short_str"}]`;
 
         try {
             const responseText = await this.queryOllama(prompt, 'mistral', 'json');

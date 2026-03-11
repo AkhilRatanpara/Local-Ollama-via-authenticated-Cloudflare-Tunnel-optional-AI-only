@@ -42,6 +42,80 @@ export default function AddSchemePage() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleQuickFill = () => {
+        const samples = [
+            {
+                title: "PM-Kisan Samman Nidhi Yojana (Quick Add)",
+                ministry: "Ministry of Agriculture & Farmers Welfare",
+                description: "To provide income support to all landholding farmers' families in the country to enable them to take care of expenses related to agriculture and allied activities as well as domestic needs.",
+                category: "Agriculture",
+                type: "Subsidy",
+                state: "Central",
+                benefits: "Direct income support of ₹6,000 per year in three equal installments of ₹2,000 each.",
+                eligibility: "1. All landholding farmers' families are eligible. 2. Must have valid land records.",
+                documentsRequired: "Aadhar Card, Land Papers, Bank Account Details",
+                amount: "6000",
+                gender: "All",
+                ageMin: "18",
+                ageMax: "100",
+                incomeLimit: "",
+                caste: "SC, ST, OBC, General",
+                residence: "Both",
+                deadline: "2026-12-31",
+                status: "active",
+                tags: "farmer, income, agriculture, direct benefit",
+                applicationUrl: "https://pmkisan.gov.in/"
+            },
+            {
+                title: "National Overseas Scholarship (Quick Add)",
+                ministry: "Ministry of Social Justice and Empowerment",
+                description: "Financial assistance for students from marginalized communities to pursue Master's or Ph.D. level courses abroad.",
+                category: "Education",
+                type: "Grant",
+                state: "Central",
+                benefits: "Tuition fees, maintenance allowance, air passage, visa fees, and medical insurance.",
+                eligibility: "1. SC, ST, or Denotified Tribes. 2. Annual family income below ₹8 Lakh. 3. Age below 35 years.",
+                documentsRequired: "Caste Certificate, Income Certificate, Admission Letter, Passport",
+                amount: "2500000",
+                gender: "All",
+                ageMin: "18",
+                ageMax: "35",
+                incomeLimit: "800000",
+                caste: "SC, ST, OBC",
+                residence: "Both",
+                deadline: "2025-06-15",
+                status: "active",
+                tags: "scholarship, abroad, education, higher studies",
+                applicationUrl: "https://nosmsje.gov.in/"
+            },
+            {
+                title: "Stand-Up India Loan Scheme (Quick Add)",
+                ministry: "Ministry of Finance",
+                description: "Facilitating bank loans between ₹10 lakh and ₹1 crore to at least one Scheduled Caste (SC) or Scheduled Tribe (ST) borrower and at least one woman borrower per bank branch for setting up a greenfield enterprise.",
+                category: "Business",
+                type: "Loan",
+                state: "Central",
+                benefits: "Composite loan (inclusive of term loan and working capital) between ₹10 lakh and up to ₹100 lakh.",
+                eligibility: "1. SC/ST and/or women entrepreneurs. 2. Above 18 years of age. 3. Greenfield enterprise only.",
+                documentsRequired: "Business Plan, ID Proof, Address Proof, Category Certificate",
+                amount: "10000000",
+                gender: "All",
+                ageMin: "18",
+                ageMax: "70",
+                incomeLimit: "",
+                caste: "SC, ST",
+                residence: "Both",
+                deadline: "",
+                status: "active",
+                tags: "startup, business, loan, entrepreneurship",
+                applicationUrl: "https://www.standupmitra.in/"
+            }
+        ];
+
+        const randomSample = samples[Math.floor(Math.random() * samples.length)];
+        setFormData(randomSample);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -79,6 +153,13 @@ export default function AddSchemePage() {
                         </Link>
                         <h1 className="text-3xl font-[900] tracking-tight">Create New Scheme</h1>
                     </div>
+                    <button 
+                        type="button"
+                        onClick={handleQuickFill}
+                        className="bg-white border-2 border-dashed border-gray-300 text-gray-600 px-6 py-2.5 rounded-xl font-bold hover:border-black hover:text-black transition-all flex items-center gap-2"
+                    >
+                        <span>✨</span> Quick Fill (Random Sample)
+                    </button>
                 </div>
 
                 <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">

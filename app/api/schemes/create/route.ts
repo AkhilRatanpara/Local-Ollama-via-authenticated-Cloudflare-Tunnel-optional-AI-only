@@ -1,6 +1,8 @@
 import { db } from "@/db";
 import { schemes } from "@/db/schemas/scheme";
+import { users } from "@/db/schemas/user";
 import { getSession } from "@/lib/auth";
+import { MailService } from "@/lib/mail-service";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -60,6 +62,20 @@ export async function POST(req: Request) {
     };
 
     const newScheme = await db.insert(schemes).values(newSchemeData).returning();
+
+    // --- BACKGROUND EMAIL NOTIFICATION ---
+    // Fetch all users and send email in the background (fire and forget)
+    (async () => {
+        try {
+            const allUsers = await db.select({ email: users.email, name: users.name }).from(users);
+            if (allUsers.length > 0) {
+                await MailService.notifyNewScheme(allUsers, newScheme[0]);
+                console.log(`Notification emails sent to ${allUsers.length} users.`);
+            }
+        } catch (mailError) {
+            console.error("Failed to send background emails:", mailError);
+        }
+    })();
 
     return NextResponse.json(
       { message: "Scheme created successfully", scheme: newScheme[0] },

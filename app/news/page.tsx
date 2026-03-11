@@ -1,162 +1,234 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
+import { 
+    Search, 
+    LayoutGrid, 
+    Bell, 
+    Zap, 
+    CheckCircle, 
+    Info,
+    Calendar,
+    ArrowRight
+} from "lucide-react";
 
 export default function NewsPage() {
+    const [searchQuery, setSearchQuery] = useState("");
+    const [activeCategory, setActiveCategory] = useState("All");
+
+    const newsData = [
+        {
+            id: "1",
+            title: "New Subsidy for Electric Tractors Announced",
+            date: "2 Hours Ago",
+            category: "Agriculture",
+            icon: "🚜",
+            description: "The Ministry of Agriculture has officially increased the subsidy cap for electric farm equipment to 40% to promote sustainable farming."
+        },
+        {
+            id: "2",
+            title: "PM Mudra Loan Limit Increased to ₹20 Lakhs",
+            date: "Yesterday",
+            category: "Business",
+            icon: "💰",
+            description: "RBI has approved doubling the maximum loan limit under PM Mudra Yojana for existing borrowers with a good credit history."
+        },
+        {
+            id: "3",
+            title: "Scholarship Deadline Extended to March 31st",
+            date: "2 Days Ago",
+            category: "Education",
+            icon: "📚",
+            description: "National Scholarship Portal announces extension for all post-matric applications due to high demand from rural areas."
+        },
+        {
+            id: "4",
+            title: "Digital Health ID Now Mandatory for Insurance",
+            date: "3 Days Ago",
+            category: "Health",
+            icon: "🏥",
+            description: "New guidelines require ABHA ID linkage for all cashless hospitalization claims starting from the next fiscal year."
+        },
+        {
+            id: "5",
+            title: "Solar Rooftop Scheme Subsidy Doubled",
+            date: "Last Week",
+            category: "Energy",
+            icon: "☀️",
+            description: "PM Suryodaya Yojana to offer up to ₹78,000 subsidy for 3kW installations, aiming to power 1 crore households."
+        },
+        {
+            id: "6",
+            title: "Startups Tax Holiday Extended by 1 Year",
+            date: "Last Week",
+            category: "Business",
+            icon: "🚀",
+            description: "DPIIT announces a one-year extension of the tax holiday for recognized startups to foster innovation during market shifts."
+        }
+    ];
+
+    const categoryList = [
+        { name: "All", icon: LayoutGrid },
+        { name: "Agriculture", icon: Zap },
+        { name: "Business", icon: Zap },
+        { name: "Education", icon: Zap },
+        { name: "Health", icon: Zap },
+        { name: "Energy", icon: Zap }
+    ];
+
+    const filteredNews = newsData.filter(news => {
+        const matchesSearch = news.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             news.description.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = activeCategory === "All" || news.category === activeCategory;
+        return matchesSearch && matchesCategory;
+    });
+
     return (
-        <main className="w-full pb-20 bg-[#f3f0e9] min-h-screen">
-            {/* Hero Section */}
-            <div className="relative bg-[#111111] pb-36 pt-40 overflow-hidden text-white">
-                {/* Modern Grid Background */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-100px,#1a1a1a,transparent)]"></div>
+        <main className="min-h-screen pb-20 bg-[#f3f0e9] font-sans text-gray-900">
+            {/* 1. HERO SECTION */}
+            <section className="relative w-full pt-32 pb-12 flex items-center justify-center overflow-hidden bg-[#111111] text-white">
+                {/* Background Grid Pattern */}
+                <div className="absolute inset-0 z-0 pointer-events-none">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-100px,#1a1a1a,transparent)]"></div>
+                </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-16 text-center">
-                    <span className="bg-white/5 border border-white/10 text-gray-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide inline-block mb-6 shadow-sm">
-                        Flash News
-                    </span>
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-6 tracking-tight drop-shadow-sm">
-                        Government <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-white">Spotlight</span>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                    {/* Badge */}
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 shadow-sm mb-8">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                        <span className="tracking-widest uppercase text-[10px] font-bold">Government Spotlight</span>
+                    </div>
+
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-8">
+                        Stay <br />
+                        <span className="text-white">Informed</span>
                     </h1>
-                    <p className="text-xl text-gray-400 max-w-2xl mx-auto font-light leading-relaxed opacity-90 mb-12">
-                        Stay updated with the latest policy announcements, deadlines, and success stories.
-                    </p>
 
-                    {/* Key Info Cards */}
-                    <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-4 text-left">
-                        {[
-                            { title: "Real-time Updates", desc: "Get instant notifications on major scheme changes.", icon: "🔔" },
-                            { title: "Verified Sources", desc: "All news is sourced directly from official government gazettes.", icon: "✅" },
-                            { title: "Expert Analysis", desc: "Simplified breakdowns of complex policy documents.", icon: "💡" }
-                        ].map((info, idx) => (
-                            <div key={idx} className="bg-white/5 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-start gap-3 hover:bg-white/10 transition-colors cursor-default">
-                                <div className="text-2xl bg-white/10 w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">{info.icon}</div>
+                    <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
+                        The latest updates on policy changes, deadline extensions, and government announcements across India.
+                    </p>
+                </div>
+            </section>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 mt-12 relative z-20">
+                
+                {/* 2. STATS / QUICK INFO (Adapted style) */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                        { label: "Today's Updates", value: "12", icon: Bell },
+                        { label: "Trending Topics", value: "5", icon: Zap },
+                        { label: "Active Subsidies", value: "48", icon: CheckCircle },
+                        { label: "Live States", value: "28", icon: Info },
+                    ].map((stat, i) => {
+                        const Icon = stat.icon;
+                        return (
+                            <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-all">
+                                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
+                                    <Icon className="w-5 h-5 text-gray-900" />
+                                </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-sm mb-1">{info.title}</h3>
-                                    <p className="text-gray-400 text-xs leading-relaxed">{info.desc}</p>
+                                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{stat.label}</p>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* 3. CATEGORY & SEARCH */}
+                <div className="space-y-8">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex gap-2 p-1 bg-white rounded-xl border border-gray-200 overflow-x-auto no-scrollbar">
+                            {categoryList.map((cat) => (
+                                <button
+                                    key={cat.name}
+                                    onClick={() => setActiveCategory(cat.name)}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                                        activeCategory === cat.name
+                                            ? "bg-gray-900 text-white shadow-md"
+                                            : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                                    }`}
+                                >
+                                    {cat.name}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="relative group flex-1 max-w-md">
+                            <div className="relative bg-white border border-gray-200 rounded-xl flex items-center shadow-sm hover:border-gray-400 transition-all">
+                                <Search className="w-4 h-4 text-gray-400 ml-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search news articles..."
+                                    className="w-full bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-medium"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. NEWS LIST */}
+                <div className="pb-12">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-1.5 h-8 bg-gray-900 rounded-full"></div>
+                        <h3 className="text-2xl font-black text-gray-900 tracking-tight">
+                            Latest Updates
+                            <span className="ml-4 bg-gray-100 text-gray-900 px-3 py-1 rounded-full text-sm font-bold border border-gray-200">
+                                {filteredNews.length}
+                            </span>
+                        </h3>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        {filteredNews.map((news) => (
+                            <div key={news.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md relative overflow-hidden">
+                                {/* Category Badge */}
+                                <div className="flex justify-between items-start mb-6">
+                                    <span className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                        {news.category}
+                                    </span>
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        <Calendar className="w-3 h-3" />
+                                        {news.date}
+                                    </div>
+                                </div>
+
+                                {/* Content */}
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:underline decoration-2 underline-offset-4">
+                                    {news.title}
+                                </h3>
+                                
+                                <p className="text-gray-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
+                                    {news.description}
+                                </p>
+
+                                {/* Footer */}
+                                <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">{news.icon}</span>
+                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Verified Update</span>
+                                    </div>
+                                    <button className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white hover:bg-black rounded-lg text-sm font-bold transition-all shadow-lg shadow-gray-900/10">
+                                        Read More <ArrowRight className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
                         ))}
+
+                        {filteredNews.length === 0 && (
+                            <div className="col-span-full py-20 bg-white rounded-3xl border border-dashed border-gray-300 text-center">
+                                <Info className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                <p className="text-gray-500 font-bold">No news articles found matching your criteria.</p>
+                            </div>
+                        )}
                     </div>
-                </div>
-            </div>
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-20">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
-                    {[
-                        { label: "Today's Updates", value: "12", icon: "📰", color: "text-blue-500", bg: "bg-blue-50" },
-                        { label: "Trending Topics", value: "5", icon: "🔥", color: "text-purple-500", bg: "bg-purple-50" },
-                        { label: "Subscribers", value: "50k+", icon: "📧", color: "text-indigo-500", bg: "bg-indigo-50" },
-                        { label: "Source States", value: "28", icon: "🇮🇳", color: "text-green-500", bg: "bg-green-50" },
-                    ].map((stat, i) => (
-                        <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 hover:shadow-md transition-all cursor-default group">
-                            <div className={`w-12 h-12 rounded-xl ${stat.bg} ${stat.color} flex items-center justify-center text-2xl group-hover:scale-110 transition-transform`}>{stat.icon}</div>
-                            <div>
-                                <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-wide opacity-70">{stat.label}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {/* News Grid (Scheme Card Style) */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-                    {[
-                        {
-                            title: "New Subsidy for Electric Tractors Announced",
-                            date: "2 Hours Ago",
-                            tag: "Agriculture",
-                            icon: "🚜",
-                            gradient: "from-green-400 to-emerald-500",
-                            desc: "Ministry of Agriculture increases subsidy cap for EV farm equipment to 40%."
-                        },
-                        {
-                            title: "Mudra Loan Limit Increased to ₹20 Lakhs",
-                            date: "Yesterday",
-                            tag: "Business",
-                            icon: "💰",
-                            gradient: "from-blue-400 to-indigo-500",
-                            desc: "RBI approves doubling the maximum loan limit under PM Mudra Yojana for existing borrowers."
-                        },
-                        {
-                            title: "Scholarship Deadline Extended to March 31st",
-                            date: "2 Days Ago",
-                            tag: "Education",
-                            icon: "📚",
-                            gradient: "from-violet-400 to-purple-500",
-                            desc: "National Scholarship Portal announces extension for all post-matric applications."
-                        },
-                        {
-                            title: "Digital Health ID Now Mandatory for Insurance",
-                            date: "3 Days Ago",
-                            tag: "Health",
-                            icon: "🏥",
-                            gradient: "from-blue-400 to-cyan-500",
-                            desc: "New guidelines require ABHA ID linkage for cashless hospitalization claims."
-                        },
-                        {
-                            title: "Solar Rooftop Scheme Subsidy Doubled",
-                            date: "Last Week",
-                            tag: "Energy",
-                            icon: "☀️",
-                            gradient: "from-amber-400 to-orange-500",
-                            desc: "PM Suryodaya Yojana to offer up to ₹78,000 subsidy for 3kW installations."
-                        },
-                        {
-                            title: "Startups Tax Holiday Extended by 1 Year",
-                            date: "Last Week",
-                            tag: "Startup",
-                            icon: "🚀",
-                            gradient: "from-purple-400 to-pink-500",
-                            desc: "DPIIT announces one-year extension of the tax holiday for recognized startups."
-                        }
-                    ].map((news, idx) => (
-                        <div key={idx} className="group bg-white rounded-[2rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300 flex flex-col h-full hover:-translate-y-1">
-                            {/* Card Header */}
-                            <div className="h-44 relative overflow-hidden">
-                                <div className={`absolute inset-0 bg-gradient-to-br ${news.gradient} opacity-100 transition-transform duration-700 group-hover:scale-105`}></div>
-                                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
-
-                                <div className="absolute top-5 left-5 right-5 flex justify-between items-start z-10">
-                                    <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold px-3 py-1.5 rounded-full border border-white/20 uppercase tracking-wider shadow-sm">
-                                        {news.tag}
-                                    </span>
-                                    <span className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/20 shadow-sm text-xl group-hover:bg-white group-hover:text-blue-600 transition-colors">
-                                        {news.icon}
-                                    </span>
-                                </div>
-
-                                <div className="absolute bottom-4 left-5 text-white">
-                                    <p className="text-xs opacity-80 font-medium uppercase tracking-wider mb-1">Published</p>
-                                    <p className="text-xl font-bold">{news.date}</p>
-                                </div>
-                            </div>
-
-                            <div className="p-7 flex-1 flex flex-col -mt-6 relative z-10">
-                                <div className="bg-white rounded-t-3xl pt-2">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
-                                        {news.title}
-                                    </h3>
-                                    <p className="text-gray-500 text-sm mb-5 line-clamp-2 leading-relaxed">
-                                        {news.desc}
-                                    </p>
-                                </div>
-
-                                <div className="mt-auto pt-5 border-t border-gray-50 flex items-center justify-between">
-                                    <button className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors">
-                                        Read More
-                                    </button>
-                                    <button className="w-11 h-11 rounded-full bg-white/40 backdrop-blur-md border border-gray-200 flex items-center justify-center text-blue-600 shadow-lg shadow-blue-500/10 hover:bg-blue-600 hover:text-white hover:border-blue-500 transition-all group-hover:scale-110 group-hover:-rotate-45">
-                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-4 4m4-4H3" /></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
         </main>
     );
 }
+

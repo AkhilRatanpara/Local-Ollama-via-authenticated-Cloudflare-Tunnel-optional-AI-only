@@ -8,8 +8,10 @@ export async function POST(request: Request) {
   try {
     const { name, email, password, secretKey } = await request.json();
 
-    // Simple hardcoded secret for demo purposes
-    if (secretKey !== "admin123") {
+    // Check for secret key from .env
+    const systemSecret = process.env.ADMIN_SECRET_KEY;
+    
+    if (!secretKey || secretKey.trim() !== systemSecret) {
       return NextResponse.json(
         { message: "Invalid Admin Secret Key" },
         { status: 403 }
