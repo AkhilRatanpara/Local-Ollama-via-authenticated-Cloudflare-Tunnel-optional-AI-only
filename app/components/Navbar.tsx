@@ -39,12 +39,24 @@ export default function Navbar() {
             <nav className={`w-full fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "bg-[#111111]/90 border-b border-white/10 backdrop-blur-xl shadow-lg" : "bg-transparent border-transparent"}`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
-                        {/* Logo */}
-                        <Link href="/" className="flex items-center gap-2 group">
-                            <div className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-xl shadow-sm transition-transform group-hover:scale-105 bg-white text-black">
-                                <GraduationCap size={20} />
+                        {/* Premium Logo */}
+                        <Link href="/" className="flex items-center gap-3 group relative">
+                            <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-700 ease-out group-hover:rotate-[360deg]">
+                                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600 via-indigo-500 to-emerald-400 rounded-xl blur shadow-lg opacity-70 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="relative w-[38px] h-[38px] bg-[#050b14] rounded-xl flex items-center justify-center border border-white/20 overflow-hidden">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[20px] h-[20px]">
+                                        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#paint0_linear)"/>
+                                        <path d="M2 17L12 22L22 17" stroke="url(#paint1_linear)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <path d="M2 12L12 17L22 12" stroke="url(#paint2_linear)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                        <defs>
+                                            <linearGradient id="paint0_linear" x1="2" y1="7" x2="22" y2="7" gradientUnits="userSpaceOnUse"><stop stopColor="#3B82F6"/><stop offset="1" stopColor="#10B981"/></linearGradient>
+                                            <linearGradient id="paint1_linear" x1="2" y1="17" x2="22" y2="17" gradientUnits="userSpaceOnUse"><stop stopColor="#6366F1"/><stop offset="1" stopColor="#3B82F6"/></linearGradient>
+                                            <linearGradient id="paint2_linear" x1="2" y1="12" x2="22" y2="12" gradientUnits="userSpaceOnUse"><stop stopColor="#10B981"/><stop offset="1" stopColor="#6366F1"/></linearGradient>
+                                        </defs>
+                                    </svg>
+                                </div>
                             </div>
-                            <span className="font-bold text-xl tracking-tight transition-colors text-white">
+                            <span className="font-heading font-black text-2xl tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-200 to-slate-400">
                                 Sangam
                             </span>
                         </Link>

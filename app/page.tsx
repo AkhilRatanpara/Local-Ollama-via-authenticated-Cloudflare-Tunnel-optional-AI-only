@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GraduationCap, ArrowRight, Search, Zap, CheckCircle, FileText, Bell, Users, BarChart, MapPin, Landmark } from "lucide-react";
+import { ArrowRight, Search, Zap, FileText, Bell, Landmark, ShieldCheck, ChevronRight, Play, Star, TrendingUp, Sparkles, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -11,110 +11,141 @@ export default function Home() {
 
   useEffect(() => {
     const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
-    <main className="min-h-screen relative bg-[#111111] text-white overflow-x-hidden font-sans selection:bg-white/20">
+    <main className="min-h-screen relative text-slate-200 selection:bg-blue-500/30 font-sans pb-24">
 
       {/* 1. HERO SECTION */}
-      <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden pt-28">
 
-        {/* Background Grid Pattern */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          {/* Dark plus grid pattern */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-100px,#1a1a1a,transparent)]"></div>
+        {/* Dynamic Background */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          {/* Subtle Grid */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+          
+          {/* Ambient Glowing Orbs */}
+          <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-600/10 blur-[120px] animate-pulse-glow"></div>
+          <div className="absolute top-[20%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-orange-500/10 blur-[120px] animate-pulse-glow delay-700"></div>
+          <div className="absolute bottom-[-20%] left-[20%] w-[60vw] h-[60vw] rounded-full bg-emerald-500/5 blur-[150px] animate-pulse-glow delay-1000"></div>
         </div>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between w-full h-full gap-12 pb-20 md:pb-0">
+        {/* Hero Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between w-full h-full gap-16 pb-20 mt-10 md:mt-0">
 
-          {/* Left Content */}
-          <div className="w-full md:w-1/2 text-left space-y-8 animate-fade-in-up pt-12 md:pt-0">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 backdrop-blur-sm shadow-sm">
-              <Zap size={14} className="fill-white text-white" />
-              <span>AI-Powered Matching</span>
+          {/* Left Text */}
+          <div className="w-full lg:w-1/2 text-left space-y-10 animate-slide-up-fade">
+            
+            {/* Top Badge */}
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full glass-panel border-white/10 shadow-lg text-sm font-medium text-blue-200">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+              </span>
+              AI-Powered Government Matchmaking
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] font-heading drop-shadow-sm">
               Empower Your Future <br />
-              <span className="text-white bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-white">With Sangam AI</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-white animate-gradient">With Sangam AI</span>
             </h1>
 
-            <p className="text-gray-400 text-lg md:text-xl max-w-xl leading-relaxed">
-              Discover, Apply, and Track thousands of government opportunities tailored just for you. No paperwork chaos, just plain results.
+            <p className="text-slate-400 text-lg md:text-xl max-w-xl leading-relaxed font-light">
+              Discover and find perfect government benefits that made for you with AI. We simplify the entire process from discovery to application, ensuring you get exactly what you deserve without the paperwork chaos.
             </p>
 
-            <div className="flex flex-wrap gap-4 pt-2">
-              <Link href={user ? "/schemes" : "/register"} className="px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-200 transition-all flex items-center gap-2 transform hover:scale-105 shadow-lg shadow-white/10">
-                <Zap size={20} className="fill-black" /> Get Started
+            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+              <Link href={user ? "/schemes" : "/register"} className="group relative px-8 py-4 bg-white text-[#050b14] rounded-full font-bold text-lg hover:bg-slate-100 transition-all flex items-center justify-center gap-2 overflow-hidden hover-glow">
+                <span className="relative z-10 flex items-center gap-2">
+                  <Sparkles size={20} className="text-blue-600" /> Get Started Free
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-white via-slate-200 to-white translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
               </Link>
-              <Link href="/schemes" className="px-8 py-4 bg-transparent border border-gray-600 text-white rounded-full font-bold text-lg hover:bg-white/5 hover:border-white transition-all flex items-center gap-2 hover:scale-105">
-                <Search size={20} /> Explore Schemes
+              
+              <Link href="/schemes" className="group px-8 py-4 bg-transparent border border-slate-700 text-white rounded-full font-semibold text-lg hover:bg-slate-800 transition-all flex items-center justify-center gap-3">
+                <Search size={20} className="group-hover:scale-110 transition-transform" /> 
+                Explore Schemes
               </Link>
             </div>
 
-            <div className="flex gap-12 pt-8 border-t border-white/10 mt-16">
-              <div>
-                <div className="text-3xl font-bold text-white">850+</div>
-                <div className="text-gray-500 text-sm font-medium mt-1">Schemes Listed</div>
+            <div className="flex items-center gap-10 pt-10 border-t border-slate-800/50">
+              <div className="animate-slide-up-fade delay-300">
+                <div className="text-4xl font-heading font-bold text-white tracking-tight">850<span className="text-blue-500">+</span></div>
+                <div className="text-slate-500 text-sm font-medium mt-1 uppercase tracking-wider">Active Schemes</div>
               </div>
-              <div>
-                <div className="text-3xl font-bold text-white">100%</div>
-                <div className="text-gray-500 text-sm font-medium mt-1">Free</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-white">AI</div>
-                <div className="text-gray-500 text-sm font-medium mt-1">Powered</div>
+              <div className="w-[1px] h-12 bg-slate-800"></div>
+              <div className="animate-slide-up-fade delay-500">
+                <div className="text-4xl font-heading font-bold text-white tracking-tight">100<span className="text-emerald-500">%</span></div>
+                <div className="text-slate-500 text-sm font-medium mt-1 uppercase tracking-wider">Free Access</div>
               </div>
             </div>
           </div>
 
-          {/* Right Visual - 3D Graphic */}
-          <div className="w-full md:w-1/2 relative flex justify-center md:justify-end items-center h-[500px] md:pr-12">
-            {/* 3D-like graphic using CSS/Icons */}
-            <div className="relative w-full max-w-[500px] aspect-square animate-float">
-
-              {/* Center Graphic - Changed to Landmark for Government Schemes */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 transition-transform duration-500" style={{ transform: `translate(-50%, calc(-50% + ${scrollY * -0.05}px))` }}>
-                {/* Using GraduationCap as main visual still looks sleek, or maybe Landmark? Let's use Landmark for Sangam context */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/20 to-purple-500/20 blur-3xl rounded-full"></div>
-                  <Landmark size={280} className="text-gray-100 drop-shadow-2xl relative z-10" strokeWidth={0.8} />
+          {/* Right Visual 3D Showcase */}
+          <div className="w-full lg:w-1/2 relative flex justify-center items-center h-[550px] animate-reveal-right delay-200">
+            <div className="relative w-full max-w-[550px] aspect-square animate-float-smooth">
+              
+              {/* Central Glowing Shield / Landmark */}
+              <div 
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 transition-transform duration-700 ease-out"
+                style={{ transform: `translate(-50%, calc(-50% + ${scrollY * -0.08}px))` }}
+              >
+                <div className="relative flex items-center justify-center">
+                  {/* Rotating Border */}
+                  <div className="absolute inset-[-40px] rounded-full border border-blue-500/30 border-dashed animate-spin-slow"></div>
+                  
+                  {/* Inner Glass Orb */}
+                  <div className="w-48 h-48 rounded-full glass-card flex items-center justify-center shadow-[0_0_80px_rgba(59,130,246,0.3)] border-blue-500/20 backdrop-blur-xl">
+                    <Landmark size={80} className="text-blue-100 drop-shadow-[0_0_15px_rgba(255,255,255,0.8)] stroke-[1]" />
+                  </div>
                 </div>
               </div>
 
-              {/* Glow behind Graphic */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-white/5 rounded-full blur-[80px] -z-10"></div>
-
-              {/* Floating Badge: 95% Match */}
-              <div className="absolute bottom-[20%] right-0 md:-right-4 bg-white text-black px-5 py-3 rounded-full shadow-2xl flex items-center gap-3 animate-float z-20 hover:scale-110 transition-transform cursor-default border border-white/50" style={{ animationDelay: '1.5s' }}>
-                <Zap className="text-amber-500 fill-amber-100" size={24} />
+              {/* Orbiting Elements */}
+              {/* Top Right Card */}
+              <div className="absolute top-[10%] right-[0%] glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 z-30 animate-float-smooth delay-300 hover:scale-105 transition-transform duration-300 shadow-2xl border-white/10">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                  <UserCheck className="text-emerald-400" size={24} />
+                </div>
                 <div>
-                  <span className="font-bold text-sm block">95% Match</span>
+                  <div className="text-sm text-slate-400 font-medium">Match Accuracy</div>
+                  <div className="text-xl font-bold text-white">99.9%</div>
                 </div>
               </div>
 
-              {/* Decorative Elements */}
-              <div className="absolute top-0 right-10 text-gray-700 animate-pulse delay-700">+</div>
-              <div className="absolute bottom-10 left-10 text-gray-700 animate-pulse delay-300">+</div>
+              {/* Bottom Left Card */}
+              <div className="absolute bottom-[10%] left-[-5%] glass-panel px-6 py-4 rounded-2xl flex items-center gap-4 z-30 animate-float-smooth delay-700 hover:scale-105 transition-transform duration-300 shadow-2xl border-white/10">
+                <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center border border-orange-500/30">
+                  <TrendingUp className="text-orange-400" size={24} />
+                </div>
+                <div>
+                  <div className="text-sm text-slate-400 font-medium">Daily Updates</div>
+                  <div className="text-xl font-bold text-white">Live Data</div>
+                </div>
+              </div>
+              
+              {/* Floating stars */}
+              <Star className="absolute top-[20%] left-[15%] text-blue-400/50 animate-pulse delay-700" size={20} />
+              <Star className="absolute bottom-[30%] right-[10%] text-indigo-400/50 animate-pulse delay-300" size={24} />
+              
             </div>
           </div>
 
         </div>
       </section>
 
-      {/* 2. WHY CHOOSE SANGAM (Previously Bento Grid Features) */}
-      <section className="bg-[#f3f0e9] py-32 text-gray-900 relative z-10">
-
+      {/* 2. WHY CHOOSE SANGAM (Glassmorphism Grid) */}
+      <section className="relative py-32 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-block px-4 py-1.5 rounded text-xs font-bold uppercase tracking-wider mb-6 bg-[#333] text-white">Why Choose Us</div>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight text-gray-900">
-              Why Choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">Sangam?</span>
+          <div className="text-center mb-20 animate-slide-up-fade">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-700/50 bg-slate-800/30 text-xs font-bold uppercase tracking-widest mb-6 text-slate-300">
+              <ShieldCheck size={16} className="text-blue-400" /> Platform Advantages
+            </div>
+            <h2 className="text-4xl md:text-5xl font-heading font-bold text-white tracking-tight">
+              A New Era of <br className="hidden md:block"/> 
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Civic Empowerment</span>
             </h2>
           </div>
 
@@ -122,30 +153,37 @@ export default function Home() {
             {[
               {
                 title: "AI-Driven Matching",
-                desc: "Our advanced algorithms analyze your profile against thousands of criteria to find schemes you actually qualify for.",
-                icon: <Zap size={32} className="text-white" />,
-                bg: "bg-black"
+                desc: "Our advanced algorithms analyze your profile against complex parameters to ensure you only see what you qualify for.",
+                icon: <Zap size={28} className="text-blue-400" />,
+                gradient: "group-hover:shadow-[0_0_40px_rgba(59,130,246,0.15)] focus-within:shadow-[0_0_40px_rgba(59,130,246,0.15)] group-hover:border-blue-500/30"
               },
               {
-                title: "Instant Updates",
-                desc: "Get notified immediately when new schemes are launched or deadlines approach.",
-                icon: <Bell size={32} className="text-white" />,
-                bg: "bg-gray-800"
+                title: "Real-Time Alerts",
+                desc: "Get notified immediately when new schemes are launched or crucial application deadlines are approaching.",
+                icon: <Bell size={28} className="text-orange-400" />,
+                gradient: "group-hover:shadow-[0_0_40px_rgba(249,115,22,0.15)] group-hover:border-orange-500/30"
               },
               {
-                title: "Vernacular Support",
-                desc: "Access tailored content in 12+ regional languages, making valid information accessible to everyone.",
-                icon: <FileText size={32} className="text-white" />,
-                bg: "bg-gray-700"
+                title: "Easy Application Steps",
+                desc: "Follow simplified, step-by-step application procedures designed specifically for our project. Apply with absolute confidence and zero friction.",
+                icon: <FileText size={28} className="text-emerald-400" />,
+                gradient: "group-hover:shadow-[0_0_40px_rgba(16,185,129,0.15)] group-hover:border-emerald-500/30"
               }
             ].map((item, i) => (
-              <div key={i} className="bg-white p-8 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 relative group hover:translate-y-[-5px] transition-all duration-300 h-full flex flex-col">
-                <div className={`w-16 h-16 ${item.bg} rounded-2xl flex items-center justify-center mb-8 shadow-lg rotate-3 group-hover:rotate-6 transition-transform`}>
+              <div 
+                key={i} 
+                className={`group glass-card p-10 rounded-3xl transition-all duration-500 hover:-translate-y-2 h-full flex flex-col justify-start relative overflow-hidden ${item.gradient} animate-slide-up-fade custom-delay-${i}`}
+                style={{ animationDelay: `${i * 150}ms` }}
+              >
+                {/* Hover Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                
+                <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700/50 flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                   {item.icon}
                 </div>
                 <div className="relative z-10">
-                  <h3 className="text-2xl font-bold mb-4 text-gray-900">{item.title}</h3>
-                  <p className="text-gray-500 leading-relaxed text-lg">{item.desc}</p>
+                  <h3 className="text-2xl font-bold mb-4 text-white font-heading">{item.title}</h3>
+                  <p className="text-slate-400 leading-relaxed text-base">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -153,60 +191,84 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3. TRENDING SCHEMES (White Mode) */}
-      <section className="py-24 bg-white border-t border-gray-100 text-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-black mb-4">Trending Now</h2>
-              <p className="text-gray-500 text-lg">Most applied schemes this week</p>
+      {/* 3. TRENDING SCHEMES */}
+      <section className="relative py-24 mb-10 overflow-hidden">
+        {/* Background glow for the section */}
+        <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-full bg-blue-600/5 blur-[150px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 border-b border-slate-800/50 pb-8">
+            <div className="mb-6 md:mb-0">
+              <h2 className="text-4xl md:text-5xl font-bold font-heading text-white tracking-tight mb-4">Trending Schemes</h2>
+              <p className="text-slate-400 text-lg">Top opportunities applied for this week across India.</p>
             </div>
-            <Link href="/schemes" className="text-blue-600 font-bold hover:text-blue-800 transition-colors flex items-center gap-2">View All <ArrowRight size={18} /></Link>
+            <Link href="/schemes" className="group flex items-center gap-2 text-sm font-bold text-blue-400 hover:text-blue-300 transition-colors uppercase tracking-wider px-6 py-3 rounded-full border border-blue-500/20 hover:border-blue-500/50 bg-blue-500/5">
+              Explore Catalog 
+              <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: "Mudra Loan", cat: "Business", amount: "₹10 Lakh", gradient: "from-blue-500 to-indigo-600", bg: "bg-blue-50" },
-              { title: "Awas Yojana", cat: "Housing", amount: "₹2.5 Lakh", gradient: "from-purple-500 to-pink-600", bg: "bg-purple-50" },
-              { title: "Skill India", cat: "Education", amount: "Free Training", gradient: "from-orange-500 to-red-600", bg: "bg-orange-50" }
+              { title: "Mudra Yojana", cat: "Business", amount: "Up to ₹10L", icon: TrendingUp, color: "text-blue-400", bgGlow: "bg-blue-500/20" },
+              { title: "PMAY Urban", cat: "Housing", amount: "Subsidies", icon: Landmark, color: "text-purple-400", bgGlow: "bg-purple-500/20" },
+              { title: "PM Kaushal", cat: "Education", amount: "100% Free", icon: Zap, color: "text-orange-400", bgGlow: "bg-orange-500/20" }
             ].map((item, idx) => (
-              <div key={idx} className="group relative h-72 rounded-3xl overflow-hidden cursor-pointer border border-gray-100 shadow-sm hover:shadow-2xl transition-all hover:-translate-y-2">
-                {/* Background with slight tint */}
-                <div className={`absolute inset-0 ${item.bg} opacity-30`}></div>
+              <Link
+                href="/schemes"
+                key={idx} 
+                className={`group relative h-[380px] rounded-[2rem] overflow-hidden cursor-pointer glass-card border border-slate-700/30 hover:border-slate-500/50 transition-all duration-700 hover:-translate-y-3 block`}
+                style={{ animationDelay: `${idx * 150}ms` }}
+              >
+                {/* Abstract Background Elements inside card */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700 ease-out"></div>
+                <div className={`absolute -bottom-10 -right-10 w-40 h-40 rounded-full ${item.bgGlow} blur-3xl opacity-50 group-hover:opacity-100 transition-opacity duration-500`}></div>
 
-                {/* Gradient Header Overlay */}
-                <div className={`absolute top-0 left-0 right-0 h-40 bg-gradient-to-br ${item.gradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
-
-                <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-                  <div className="flex justify-between items-start">
-                    <span className="bg-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm border border-gray-100">{item.cat}</span>
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-gray-400 group-hover:text-black transition-colors shadow-sm cursor-pointer hover:bg-gray-50">
-                      <ArrowRight size={16} />
+                <div className="absolute inset-0 p-8 flex flex-col justify-between z-10 w-full h-full">
+                  <div className="flex justify-between items-start w-full">
+                    <span className="glass-panel px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-slate-300 shadow-sm border border-slate-600/50 backdrop-blur-md">
+                      {item.cat}
+                    </span>
+                    <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center text-slate-400 group-hover:text-white group-hover:bg-blue-500 group-hover:border-blue-400 transition-all duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                      <ArrowRight size={20} className="-rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                     </div>
                   </div>
-                  <div>
-                    <h3 className="text-3xl font-bold mb-2 text-gray-900 group-hover:text-blue-700 transition-colors">{item.title}</h3>
-                    <p className="text-gray-600 font-medium text-lg">{item.amount} Benefit</p>
+                  
+                  <div className="w-full transform group-hover:translate-y-[-10px] transition-transform duration-500">
+                    <item.icon size={36} className={`mb-6 ${item.color} opacity-80 group-hover:opacity-100 transition-opacity`} />
+                    <h3 className="text-3xl font-heading font-bold mb-3 text-white">{item.title}</h3>
+                    <div className="flex items-center gap-2">
+                       <ShieldCheck size={18} className="text-slate-500" />
+                       <span className="text-slate-300 font-medium text-lg">{item.amount} Benefit</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
       {/* 4. CALL TO ACTION */}
-      <section className="py-32 bg-[#f9fafb] text-center border-t border-gray-100">
-        <div className="max-w-4xl mx-auto px-4">
-          <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tighter text-gray-900">
-            Ready to Claim Your Benefits?
-          </h2>
-          <p className="text-xl text-gray-500 mb-12 max-w-2xl mx-auto">
-            Join 10 Million+ Indians who have already found their path to prosperity.
-          </p>
-          <Link href={user ? "/profile" : "/register"} className="inline-block px-12 py-5 bg-black text-white rounded-full font-bold text-xl hover:scale-105 transition-transform shadow-2xl hover:shadow-xl">
-            {user ? "Go to Dashboard" : "Get Started Now"}
-          </Link>
+      <section className="relative py-28 mx-4 sm:mx-6 lg:mx-8 mb-20 animate-slide-up-fade delay-300">
+        <div className="max-w-6xl mx-auto glass-card rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.1)]">
+          
+          {/* Inner Glows */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-[800px] bg-gradient-to-b from-blue-600/20 to-transparent blur-3xl -z-10"></div>
+          
+          <div className="relative z-10 max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6 tracking-tight text-white drop-shadow-lg">
+              Ready to Claim Your Benefits?
+            </h2>
+            <p className="text-xl text-slate-400 mb-12 font-light">
+              Join millions of Indians who have already found their path to prosperity with Sangam AI.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-6">
+              <Link href={user ? "/profile" : "/register"} className="px-10 py-5 bg-white text-[#050b14] rounded-full font-bold text-xl hover:scale-105 transition-transform duration-300 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)] flex items-center justify-center gap-3">
+                {user ? "Go to Dashboard" : "Create Free Account"} <ArrowRight size={20} />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
