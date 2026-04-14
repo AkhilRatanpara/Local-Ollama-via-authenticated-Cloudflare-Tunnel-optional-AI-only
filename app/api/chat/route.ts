@@ -20,22 +20,87 @@ export async function POST(req: Request) {
     // --- 1. DETECT SPECIFIC SCHEME INQUIRY ---
     const allActiveSchemes = await db.select().from(schemes).where(eq(schemes.status, 'active'));
     
-    // Try to find if user mentioned a scheme title specifically
-    const specificScheme = allActiveSchemes.find(s => 
-        lastMessageLower.includes(s.title.toLowerCase()) || 
-        (s.title.length > 10 && lastMessageLower.includes(s.title.toLowerCase().substring(0, 15)))
-    );
+    // Greedy matching: Look for scheme mentioned anywhere in message
+    const findSpecificScheme = () => {
+        // Remove conversational filler
+        const cleanMsg = lastMessageLower.replace(/hey|hi|hello|please|am i|can i|is there|any|eligible for|tell me about|what is|how to apply for|details of|scheme|yojana/g, "").trim();
+        const inputWords = cleanMsg.split(/\s+/).filter((w: string) => w.length >= 2);
+
+        if (inputWords.length === 0) return null;
+
+        for (const s of allActiveSchemes) {
+            const titleLow = s.title.toLowerCase();
+            const tagsLow = (s.tags || []).map(t => t.toLowerCase());
+            const urlLow = (s.applicationUrl || "").toLowerCase();
+            
+            // 1. Check for Acronym match (MYSY)
+            const acronym = s.title.split(/\s+/)
+                .filter(w => w.length > 0 && !["for", "the", "of", "and", "under"].includes(w.toLowerCase()))
+                .map(w => w[0]).join('').toLowerCase();
+            
+            if (inputWords.includes(acronym) || acronym === cleanMsg.replace(/\s+/g, '')) return s;
+
+            // 2. Check each input word against title and tags
+            for (const word of inputWords) {
+                // Ignore very common words if they aren't part of a short acronym
+                if (word.length < 3 && !["sc", "st", "bc"].includes(word)) continue;
+                
+                if (titleLow.includes(word) || tagsLow.includes(word) || urlLow.includes(word)) {
+                    // If word is "mysy" and it's in the title or URL, high confidence
+                    if (word === "mysy" || word === acronym) return s;
+                    
+                    // Otherwise, only match if it's a significant part of the title
+                    if (word.length > 4 && titleLow.split(/\s+/).includes(word)) return s;
+                }
+            }
+        }
+        return null;
+    };
+
+    const specificScheme = findSpecificScheme();
 
     if (specificScheme) {
-        schemeContext = `User is asking about a SPECIFIC SCHEME:
-Title: ${specificScheme.title}
-Category: ${specificScheme.category}
-Benefits: ${specificScheme.benefits}
-Eligibility: ${specificScheme.eligibility}
-Documents Required: ${specificScheme.documentsRequired ? specificScheme.documentsRequired.join(', ') : 'Not specified'}
-Amount: ${specificScheme.amount}
+        let eligibilityStatus = "Unknown (ask for profile details if missing)";
+        if (userProfile) {
+            let age = 0;
+            if (userProfile.dob) {
+                const birth = new Date(userProfile.dob);
+                const now = new Date();
+                age = now.getFullYear() - birth.getFullYear();
+                if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+            }
+            const income = userProfile.income ? parseFloat(userProfile.income.toString().replace(/[^0-9.]/g, '')) : Infinity;
+            
+            const isAgeOk = (!specificScheme.ageMin || age >= specificScheme.ageMin) && (!specificScheme.ageMax || age <= specificScheme.ageMax);
+            const isIncomeOk = !specificScheme.incomeLimit || income <= specificScheme.incomeLimit;
+            const isGenderOk = !specificScheme.gender || specificScheme.gender === "All" || specificScheme.gender === userProfile.gender;
+            const isCasteOk = !specificScheme.caste || specificScheme.caste.length === 0 || (userProfile.category && specificScheme.caste.includes(userProfile.category));
 
-Provide full details about this specific scheme and answer the user's question accurately based on this data.`;
+            if (isAgeOk && isIncomeOk && isGenderOk && isCasteOk) {
+                eligibilityStatus = "ELIGIBLE. Congratulate them and explain why.";
+            } else {
+                let reason = [];
+                if (!isAgeOk) reason.push(`age (${age})`);
+                if (!isIncomeOk) reason.push(`income (₹${income})`);
+                if (!isGenderOk) reason.push(`gender (${userProfile.gender})`);
+                if (!isCasteOk) reason.push(`category (${userProfile.category})`);
+                eligibilityStatus = `NOT ELIGIBLE because of: ${reason.join(", ")}. Explain this politely.`;
+            }
+        }
+
+        schemeContext = `CRITICAL CONTEXT: The user is explicitly asking about "${specificScheme.title}".
+DETAILS:
+- Title: ${specificScheme.title}
+- Benefits: ${specificScheme.benefits}
+- Required Documents: ${specificScheme.documentsRequired ? specificScheme.documentsRequired.join(', ') : 'Aadhar, Income/Caste Certificate'}
+- Eligibility: ${specificScheme.eligibility}
+- Official URL: ${specificScheme.applicationUrl || 'N/A'}
+- ELIGIBILITY FOR THIS USER: ${eligibilityStatus}
+
+INSTRUCTION: 
+1. Focus ONLY on "${specificScheme.title}". 
+2. Do NOT suggest other schemes unless they are complementary.
+3. If they asked if they are eligible, give the definitive answer from the 'ELIGIBILITY FOR THIS USER' field above.`;
     } 
     // --- 2. FALLBACK TO RECOMMENDATION FLOW ---
     else if (userProfile && (lastMessageLower.includes("recommend") || lastMessageLower.includes("suggest") || lastMessageLower.includes("eligible"))) {

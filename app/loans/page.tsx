@@ -192,9 +192,12 @@ export default function LoansPage() {
                                         <span className="w-2 h-2 rounded-full bg-gray-900"></span>
                                         <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Apply Now</span>
                                     </div>
-                                    <button className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-lg text-sm font-bold transition-all">
+                                    <Link 
+                                        href={`/loans/${loan.id}`} 
+                                        className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-lg text-sm font-bold transition-all"
+                                    >
                                         View Details
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         ))}

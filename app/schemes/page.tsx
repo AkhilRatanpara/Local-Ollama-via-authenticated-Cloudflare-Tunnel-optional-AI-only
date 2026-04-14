@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import {
     Search,
     ChevronLeft,
@@ -15,7 +16,8 @@ import {
     Briefcase,
     Coins,
     Users,
-    Landmark
+    Landmark,
+    Loader2
 } from "lucide-react";
 
 interface Scheme {
@@ -34,9 +36,11 @@ export default function SchemesPage() {
     const [allRecommendations, setAllRecommendations] = useState<Scheme[]>([]);
     const [recommendations, setRecommendations] = useState<Scheme[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSearching, setIsSearching] = useState(false);
     const [recLoading, setRecLoading] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 400);
     const schemesSectionRef = useRef<HTMLDivElement>(null);
 
     // Pagination state
@@ -49,12 +53,13 @@ export default function SchemesPage() {
     useEffect(() => {
         const fetchSchemes = async () => {
             setLoading(true);
+            if (debouncedSearch) setIsSearching(true);
             try {
                 const query = new URLSearchParams({
                     category: activeCategory !== "All" ? activeCategory : "",
                     page: currentPage.toString(),
                     limit: limit.toString(),
-                    search: searchQuery
+                    search: debouncedSearch
                 });
                 const res = await fetch(`/api/schemes?${query.toString()}`);
                 const data = await res.json();
@@ -67,11 +72,12 @@ export default function SchemesPage() {
                 console.error("Failed to fetch schemes", error);
             } finally {
                 setLoading(false);
+                setIsSearching(false);
             }
         };
 
         fetchSchemes();
-    }, [activeCategory, currentPage, searchQuery]);
+    }, [activeCategory, currentPage, debouncedSearch]);
 
     // Randomize 3 schemes from the pool
     const rotateRecommendations = useCallback(() => {
@@ -331,26 +337,28 @@ export default function SchemesPage() {
                 <div className="mb-12">
                     <div className="relative max-w-2xl mx-auto group">
                         <div className="relative bg-white border-2 border-gray-100 rounded-2xl p-2 flex items-center shadow-lg hover:shadow-xl hover:border-gray-200 transition-all">
-                            <Search className="w-6 h-6 text-gray-400 ml-4" />
+                            <div className="ml-4 flex items-center justify-center">
+                                {isSearching ? (
+                                    <Loader2 className="w-6 h-6 text-gray-900 animate-spin" />
+                                ) : (
+                                    <Search className="w-6 h-6 text-gray-400" />
+                                )}
+                            </div>
                             <input
                                 type="text"
                                 placeholder="Search for schemes (e.g. 'Student Scholarship')..."
                                 className="w-full bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-400 px-4 py-3 text-lg font-medium"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        setCurrentPage(1);
-                                    }
-                                }}
                             />
-                            <button
-                                onClick={() => setCurrentPage(1)}
-                                className="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors shadow-lg shadow-gray-900/20"
-                            >
-                                Search
-                            </button>
                         </div>
+                        {debouncedSearch && (
+                            <div className="mt-2 text-center">
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">
+                                    {loading ? "Searching..." : `Showing results for "${debouncedSearch}"`}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

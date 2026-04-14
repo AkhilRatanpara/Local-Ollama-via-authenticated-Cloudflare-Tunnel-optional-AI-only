@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 
 import * as usersSchema from './schemas/user';
 import * as schemesSchema from './schemas/scheme';
+import * as newsSchema from './schemas/news';
 
 dotenv.config({ path: ".env" });
 
@@ -16,8 +17,9 @@ if (!connectionString) {
 const client = postgres(connectionString, { prepare: false });
 
 export const db = drizzle(client, { 
-  schema: { ...usersSchema, ...schemesSchema } 
+  schema: { ...usersSchema, ...schemesSchema, ...newsSchema } 
 });
 
 export * from './schemas/user';
 export * from './schemas/scheme';
+export * from './schemas/news';

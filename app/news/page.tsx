@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { 
     Search, 
     LayoutGrid, 
@@ -10,14 +11,19 @@ import {
     CheckCircle, 
     Info,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    Loader2
 } from "lucide-react";
 
 export default function NewsPage() {
     const [searchQuery, setSearchQuery] = useState("");
+    const debouncedSearch = useDebounce(searchQuery, 300);
+    const [isSearching, setIsSearching] = useState(false);
     const [activeCategory, setActiveCategory] = useState("All");
+    const [dbNews, setDbNews] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const newsData = [
+    const staticNews = [
         {
             id: "1",
             title: "New Subsidy for Electric Tractors Announced",
@@ -57,15 +63,55 @@ export default function NewsPage() {
             category: "Energy",
             icon: "☀️",
             description: "PM Suryodaya Yojana to offer up to ₹78,000 subsidy for 3kW installations, aiming to power 1 crore households."
-        },
-        {
-            id: "6",
-            title: "Startups Tax Holiday Extended by 1 Year",
-            date: "Last Week",
-            category: "Business",
-            icon: "🚀",
-            description: "DPIIT announces a one-year extension of the tax holiday for recognized startups to foster innovation during market shifts."
         }
+    ];
+
+    useEffect(() => {
+        const fetchNews = async () => {
+            try {
+                const res = await fetch("/api/news");
+                if (res.ok) {
+                    const data = await res.json();
+                    setDbNews(data);
+                }
+            } catch (err) {
+                console.error("Error fetching news:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchNews();
+    }, []);
+
+    // Handle searching state for UI feedback
+    useEffect(() => {
+        if (searchQuery !== debouncedSearch) {
+            setIsSearching(true);
+        } else {
+            setIsSearching(false);
+        }
+    }, [searchQuery, debouncedSearch]);
+
+    // Format relative time
+    const formatTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+        
+        if (diffInSeconds < 60) return 'Just now';
+        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
+        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+        return date.toLocaleDateString();
+    };
+
+    const combinedNews = [
+        ...dbNews.map(item => ({
+            ...item,
+            date: formatTime(item.createdAt),
+            // Map icons based on category if needed
+        })),
+        ...staticNews
     ];
 
     const categoryList = [
@@ -77,9 +123,9 @@ export default function NewsPage() {
         { name: "Energy", icon: Zap }
     ];
 
-    const filteredNews = newsData.filter(news => {
-        const matchesSearch = news.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                             news.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredNews = combinedNews.filter(news => {
+        const matchesSearch = news.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+                             news.description.toLowerCase().includes(debouncedSearch.toLowerCase());
         const matchesCategory = activeCategory === "All" || news.category === activeCategory;
         return matchesSearch && matchesCategory;
     });
@@ -158,7 +204,13 @@ export default function NewsPage() {
 
                         <div className="relative group flex-1 max-w-md">
                             <div className="relative bg-white border border-gray-200 rounded-xl flex items-center shadow-sm hover:border-gray-400 transition-all">
-                                <Search className="w-4 h-4 text-gray-400 ml-4" />
+                                <div className="ml-4 flex items-center justify-center">
+                                    {isSearching ? (
+                                        <Loader2 className="w-4 h-4 text-gray-900 animate-spin" />
+                                    ) : (
+                                        <Search className="w-4 h-4 text-gray-400" />
+                                    )}
+                                </div>
                                 <input
                                     type="text"
                                     placeholder="Search news articles..."
@@ -184,7 +236,11 @@ export default function NewsPage() {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
-                        {filteredNews.map((news) => (
+                        {isLoading ? (
+                            [1, 2, 3, 4].map(n => (
+                                <div key={n} className="bg-white rounded-2xl h-64 animate-pulse border border-gray-100 shadow-sm"></div>
+                            ))
+                        ) : filteredNews.map((news) => (
                             <div key={news.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md relative overflow-hidden">
                                 {/* Category Badge */}
                                 <div className="flex justify-between items-start mb-6">

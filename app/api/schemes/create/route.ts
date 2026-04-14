@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { schemes } from "@/db/schemas/scheme";
+import { news } from "@/db/schemas/news";
 import { users } from "@/db/schemas/user";
 import { getSession } from "@/lib/auth";
 import { MailService } from "@/lib/mail-service";
@@ -62,6 +63,19 @@ export async function POST(req: Request) {
     };
 
     const newScheme = await db.insert(schemes).values(newSchemeData).returning();
+
+    // --- CREATE NEWS ALERT ---
+    try {
+        await db.insert(news).values({
+            title: `New Scheme Launched: ${newSchemeData.title}`,
+            description: `A new scheme "${newSchemeData.title}" under ${newSchemeData.ministry} category has been launched. Check details and apply now!`,
+            category: newSchemeData.category,
+            icon: "🔔",
+            schemeId: newScheme[0].id,
+        });
+    } catch (newsError) {
+        console.error("Failed to create news alert:", newsError);
+    }
 
     // --- BACKGROUND EMAIL NOTIFICATION ---
     // Fetch all users and send email in the background (fire and forget)
