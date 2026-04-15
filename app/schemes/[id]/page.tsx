@@ -1,25 +1,14 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect, use } from "react"; // Add 'use' hook
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-    FileText,
-    Gift,
-    CheckCircle,
-    Files,
-    Rocket,
-    MapPin,
-    Building2,
-    Calendar,
-    Globe,
-    ChevronLeft,
-    ChevronRight,
-    Download
+    FileText, Gift, CheckCircle, Files, Rocket, MapPin,
+    AlertCircle, ChevronRight, Globe, Loader2, ArrowLeft, HeartPulse, Building2, Lock
 } from "lucide-react";
 
-// Define Scheme Interface
 interface Scheme {
     id: string;
     title: string;
@@ -44,19 +33,14 @@ interface Scheme {
     tags: string[];
 }
 
-export default function SchemeDetailsPage({
-    params,
-}: {
-    params: Promise<{ id: string }>; // Params must be a Promise in Next.js 15+ for client components
-}) {
-    const { id } = use(params); // Unwrap params with React.use()
+export default function SchemeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const { user } = useAuth();
-    const router = useRouter();
     const [scheme, setScheme] = useState<Scheme | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [activeSection, setActiveSection] = useState('overview');
-    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchScheme = async () => {
@@ -71,325 +55,334 @@ export default function SchemeDetailsPage({
                 setLoading(false);
             }
         };
-
-        if (id) {
-            fetchScheme();
-        }
+        if (id) fetchScheme();
     }, [id]);
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <div className="min-h-screen pt-32 flex flex-col items-center justify-center bg-slate-50 font-sans">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                <p className="text-slate-600 font-bold tracking-wider">LOADING SCHEME SCHEMA</p>
             </div>
         );
     }
 
     if (error || !scheme) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center px-4">
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Scheme Not Found 😕</h1>
-                <p className="text-gray-600 mb-6">The scheme you are looking for might have been removed or does not exist.</p>
-                <Link href="/schemes" className="px-6 py-3 bg-gray-900 text-white rounded-lg font-bold shadow-lg hover:bg-black transition-colors">
-                    Browse All Schemes
+            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center px-4 font-sans pt-32">
+                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
+                    <AlertCircle className="w-10 h-10" />
+                </div>
+                <h1 className="text-3xl font-extrabold text-slate-900 mb-2 font-heading tracking-tight">Scheme Not Found</h1>
+                <p className="text-slate-500 mb-8 max-w-md">The scheme you are looking for might have been recently removed from the database or does not exist.</p>
+                <Link href="/schemes" className="px-8 py-3.5 bg-slate-900 text-white rounded-xl font-bold shadow-[0_8px_20px_rgb(0,0,0,0.12)] hover:bg-black transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                    <ArrowLeft className="w-5 h-5"/> Browse Available Schemes
                 </Link>
             </div>
         );
     }
 
-    const isEligible = true; // TODO: Implement eligibility check logic later
+    const sections = [
+        { id: 'overview', label: 'Overview', icon: FileText },
+        { id: 'benefits', label: 'Benefits Focus', icon: Gift },
+        { id: 'eligibility', label: 'Eligibility', icon: CheckCircle },
+        { id: 'documents', label: 'Documents', icon: Files }
+    ];
 
     return (
-        <main className="min-h-screen bg-[#f3f0e9] pt-24 pb-20 font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900">
-
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-
-                {/* Breadcrumb */}
-                <div className="mb-8 text-sm font-medium flex items-center gap-2">
-                    <Link href="/schemes" className="text-gray-500 hover:text-gray-900 transition-colors">Schemes</Link>
-                    <span className="text-gray-400">/</span>
-                    <span className="text-gray-900 font-bold">{scheme.title}</span>
+        <main className="min-h-screen bg-slate-50 pt-28 pb-20 font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* Top Nav */}
+                <div className="mb-6 flex items-center gap-2">
+                    <Link href="/schemes" className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors uppercase tracking-wider">
+                        <ArrowLeft className="w-4 h-4"/> Back to Directory
+                    </Link>
                 </div>
 
-                <div className="grid lg:grid-cols-4 gap-8 items-start">
-
-                    {/* Left Column: Navigation (Tabs) */}
-                    <div className="hidden lg:block lg:col-span-1 sticky top-24">
-                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="p-4 bg-gray-50 border-b border-gray-100">
-                                <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Scheme Details</h3>
+                <div className="grid lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Sidebar Nav */}
+                    <div className="hidden lg:block lg:col-span-3 sticky top-32">
+                        <motion.div 
+                            initial={{opacity:0, x:-20}} animate={{opacity:1, x:0}}
+                            className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden"
+                        >
+                            <div className="p-6 bg-slate-50/50 border-b border-slate-100">
+                                <h3 className="font-bold text-slate-900 text-xs uppercase tracking-widest flex items-center gap-2">
+                                    <Globe className="w-4 h-4 text-blue-500"/> Blueprint View
+                                </h3>
                             </div>
-                            <nav className="flex flex-col p-2 space-y-1">
-                                {[
-                                    { id: 'overview', label: 'Overview & Details', icon: FileText },
-                                    { id: 'benefits', label: 'Benefits & Amount', icon: Gift },
-                                    { id: 'eligibility', label: 'Eligibility Criteria', icon: CheckCircle },
-                                    { id: 'documents', label: 'Required Documents', icon: Files },
-                                    { id: 'apply', label: 'Apply Now', icon: Rocket }
-                                ].map((item) => (
+                            <nav className="p-3 space-y-1">
+                                {sections.map((item) => (
                                     <button
                                         key={item.id}
                                         onClick={() => setActiveSection(item.id)}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-left transition-all ${activeSection === item.id
-                                            ? 'bg-gray-900 text-white shadow-lg shadow-gray-900/10'
-                                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                            }`}
+                                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-bold text-left transition-all relative overflow-hidden group ${
+                                            activeSection === item.id
+                                            ? 'bg-blue-50 text-blue-800'
+                                            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
                                     >
-                                        <span className="text-lg"><item.icon className="w-5 h-5" /></span>
-                                        {item.label}
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${activeSection === item.id ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400 group-hover:text-blue-500 group-hover:bg-blue-50'}`}>
+                                            <item.icon className="w-4 h-4" />
+                                        </div>
+                                        <span className="relative z-10">{item.label}</span>
+                                        {activeSection === item.id && (
+                                            <motion.div layoutId="sidebar-active" className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-600 rounded-r-full" />
+                                        )}
                                     </button>
                                 ))}
+                                
+                                <div className="mt-4 pt-4 border-t border-slate-100">
+                                    <button
+                                        onClick={() => setIsApplyModalOpen(true)}
+                                        className="w-full flex justify-center items-center gap-2 px-4 py-3.5 rounded-xl text-sm font-bold bg-blue-800 text-white shadow-[0_8px_20px_rgb(30,64,175,0.2)] hover:bg-blue-700 hover:shadow-[0_8px_25px_rgb(30,64,175,0.3)] hover:-translate-y-0.5 transition-all"
+                                    >
+                                        <Rocket className="w-4 h-4" /> Initiate Application
+                                    </button>
+                                </div>
                             </nav>
-                        </div>
+                        </motion.div>
                     </div>
 
-                    {/* Middle Column: Active Content */}
-                    <div className="lg:col-span-3 space-y-8 min-h-[500px]">
-
-                        {/* Mobile Tabs */}
-                        <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
-                            {[
-                                { id: 'overview', label: 'Overview', icon: FileText },
-                                { id: 'benefits', label: 'Benefits', icon: Gift },
-                                { id: 'eligibility', label: 'Eligibility', icon: CheckCircle },
-                                { id: 'documents', label: 'Documents', icon: Files },
-                                { id: 'apply', label: 'Apply', icon: Rocket }
-                            ].map((item) => (
+                    {/* Main Content Pane */}
+                    <div className="lg:col-span-9 space-y-6">
+                        
+                        {/* Mobile Scrolling Nav */}
+                        <div className="lg:hidden flex overflow-x-auto gap-2 pb-2 scrollbar-hide py-2">
+                            {sections.map((item) => (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveSection(item.id)}
-                                    className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border ${activeSection === item.id
-                                        ? 'bg-gray-900 text-white border-gray-900'
-                                        : 'bg-white text-gray-600 border-gray-200'
-                                        }`}
+                                    className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-all border ${
+                                        activeSection === item.id
+                                        ? 'bg-slate-900 text-white border-slate-900 shadow-md'
+                                        : 'bg-white text-slate-600 border-slate-200'
+                                    }`}
                                 >
-                                    <span><item.icon className="w-4 h-4" /></span>
-                                    {item.label}
+                                    <item.icon className="w-4 h-4" /> {item.label}
                                 </button>
                             ))}
                         </div>
 
-                        {activeSection === 'overview' && (
-                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 relative overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    <span className="bg-gray-100 text-gray-900 border border-gray-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-                                        {scheme.category}
-                                    </span>
-                                    <span className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider border ${scheme.status === 'active' ? 'bg-gray-900 text-white border-gray-900' : 'bg-gray-100 text-gray-500 border-gray-200'}`}>
-                                        {scheme.status}
-                                    </span>
-                                    <span className="bg-white text-gray-900 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-gray-200 flex items-center gap-1">
-                                        <MapPin className="w-3 h-3" />
-                                        {scheme.state === 'Central' ? 'Central Govt' : `${scheme.state}`}
-                                    </span>
-                                </div>
+                        <AnimatePresence mode="wait">
+                            <motion.div 
+                                key={activeSection}
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -15 }}
+                                transition={{ duration: 0.3 }}
+                                className="bg-white rounded-[2rem] p-8 md:p-12 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 min-h-[600px] relative overflow-hidden"
+                            >
+                                {/* Abstract BG for the content card */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full blur-[80px] -z-0 opacity-50 pointer-events-none"></div>
 
-                                <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-6 leading-tight">
-                                    {scheme.title}
-                                </h1>
+                                {activeSection === 'overview' && (
+                                    <div className="relative z-10">
+                                        <div className="flex flex-wrap gap-2 mb-8">
+                                            <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider inline-flex items-center gap-1.5">
+                                                <Building2 className="w-3.5 h-3.5" /> {scheme.category}
+                                            </span>
+                                            <span className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border inline-flex items-center gap-1.5 ${scheme.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                                <div className={`w-2 h-2 rounded-full ${scheme.status === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                                                {scheme.status}
+                                            </span>
+                                            <span className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border border-slate-200 flex items-center gap-1.5">
+                                                <MapPin className="w-3.5 h-3.5 text-slate-400" /> {scheme.state === 'Central' ? 'Central Govt' : scheme.state}
+                                            </span>
+                                        </div>
 
-                                {(() => {
-                                    const paragraphs = scheme.description.split('\n').filter(p => p.trim());
-                                    const slides = [];
-                                    for (let i = 0; i < paragraphs.length; i += 2) {
-                                        slides.push(paragraphs.slice(i, i + 2));
-                                    }
+                                        <h1 className="text-3xl md:text-5xl font-black text-slate-900 mb-6 leading-tight font-heading tracking-tight">
+                                            {scheme.title}
+                                        </h1>
 
-                                    return (
-                                        <div className="mb-8">
-                                            <div className="relative bg-[#f8f9fa] rounded-2xl p-8 min-h-[200px] border border-gray-100 flex flex-col justify-between">
-                                                <div className="text-lg text-gray-700 leading-relaxed font-medium space-y-4">
-                                                    {slides[currentSlide]?.map((paragraph, index) => (
-                                                        <p key={index}>{paragraph.trim()}</p>
-                                                    ))}
-                                                </div>
+                                        <div className="bg-slate-50/50 p-6 md:p-8 rounded-2xl border border-slate-200 mb-10 text-slate-700 leading-relaxed font-medium text-lg">
+                                            {scheme.description}
+                                        </div>
 
-                                                {slides.length > 1 && (
-                                                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-                                                        <button
-                                                            onClick={() => setCurrentSlide(prev => Math.max(0, prev - 1))}
-                                                            disabled={currentSlide === 0}
-                                                            className="flex items-center gap-1 text-sm font-bold text-gray-900 disabled:opacity-40 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
-                                                        >
-                                                            ← Previous
-                                                        </button>
-                                                        <div className="flex gap-2">
-                                                            {slides.map((_, idx) => (
-                                                                <button
-                                                                    key={idx}
-                                                                    onClick={() => setCurrentSlide(idx)}
-                                                                    className={`w-2.5 h-2.5 rounded-full transition-all ${currentSlide === idx ? 'bg-gray-900 w-8' : 'bg-gray-300'
-                                                                        }`}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                        <button
-                                                            onClick={() => setCurrentSlide(prev => Math.min(slides.length - 1, prev + 1))}
-                                                            disabled={currentSlide === slides.length - 1}
-                                                            className="flex items-center gap-1 text-sm font-bold text-gray-900 disabled:opacity-40 hover:bg-gray-200 px-4 py-2 rounded-lg transition-colors"
-                                                        >
-                                                            Next →
-                                                        </button>
-                                                    </div>
-                                                )}
+                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-blue-200 transition-colors">
+                                                <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Benefit Type</div>
+                                                <div className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Financial</div>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-blue-200 transition-colors">
+                                                <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Mode</div>
+                                                <div className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Online / Direct</div>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-blue-200 transition-colors">
+                                                <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Sponsor</div>
+                                                <div className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{scheme.ministry || "N/A"}</div>
+                                            </div>
+                                            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center group hover:border-blue-200 transition-colors">
+                                                <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Deadline</div>
+                                                <div className="font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{scheme.deadline ? new Date(scheme.deadline).toLocaleDateString() : 'Continuous'}</div>
                                             </div>
                                         </div>
-                                    );
-                                })()}
+                                    </div>
+                                )}
 
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
-                                        <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">Benefit Type</div>
-                                        <div className="font-bold text-gray-900">Financial</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
-                                        <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">Mode</div>
-                                        <div className="font-bold text-gray-900">Online</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
-                                        <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">Deadline</div>
-                                        <div className="font-bold text-gray-900">N/A</div>
-                                    </div>
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-center">
-                                        <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-1">Sponsor</div>
-                                        <div className="font-bold text-gray-900">{scheme.ministry || "Govt"}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeSection === 'benefits' && (
-                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-900">
-                                        <Gift className="w-5 h-5" />
-                                    </span>
-                                    Benefits & Amount
-                                </h2>
-                                <div className="prose prose-gray max-w-none">
-                                    <div className="bg-[#f8f9fa] p-6 rounded-2xl border border-gray-100 mb-6">
-                                        <ul className="space-y-4">
-                                            {scheme.benefits.split('\n').map((benefit: string, idx: number) => (
-                                                <li key={idx} className="flex items-start gap-3">
-                                                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                        <div className="w-2 h-2 rounded-full bg-gray-900"></div>
-                                                    </div>
-                                                    <span className="text-gray-700 font-medium leading-relaxed">{benefit.replace(/^- /, '')}</span>
+                                {activeSection === 'benefits' && (
+                                    <div className="relative z-10 w-full h-full">
+                                         <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
+                                            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+                                                <Gift className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-slate-900 font-heading">Core Benefits</h2>
+                                                <p className="text-sm text-slate-500 font-medium">Outcomes mapped directly to this scheme.</p>
+                                            </div>
+                                         </div>
+                                         <ul className="space-y-4">
+                                            {scheme.benefits.length > 5 ? scheme.benefits.split('\n').filter(Boolean).map((b, i) => (
+                                                <li key={i} className="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5"><CheckCircle className="w-4 h-4"/></div>
+                                                    <span className="text-slate-700 font-medium text-lg leading-relaxed">{b.replace(/^- /, '')}</span>
                                                 </li>
-                                            ))}
-                                        </ul>
+                                            )) : (
+                                                <li className="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors">
+                                                    <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0 mt-0.5"><CheckCircle className="w-4 h-4"/></div>
+                                                    <span className="text-slate-700 font-medium text-lg leading-relaxed">{scheme.benefits}</span>
+                                                </li>
+                                            )}
+                                         </ul>
                                     </div>
-                                </div>
-                            </div>
-                        )}
+                                )}
 
-                        {activeSection === 'eligibility' && (
-                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-900">
-                                        <CheckCircle className="w-5 h-5" />
-                                    </span>
-                                    Similarity Check
-                                </h2>
-                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 mb-8">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-2 h-2 rounded-full bg-gray-900 animate-pulse"></div>
-                                        <h3 className="text-gray-900 font-bold text-sm uppercase tracking-wider">AI Eligibility Analysis</h3>
-                                    </div>
-                                    <p className="text-gray-700 font-medium">
-                                        Based on your profile, you have a <span className="font-black bg-white border border-gray-200 px-2 py-0.5 rounded text-gray-900">High Chance</span> of being eligible for this scheme.
-                                    </p>
-                                </div>
-                                <div className="space-y-4">
-                                    {/* Placeholder criteria */}
-                                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200">
-                                        <span className="font-bold text-gray-700">Indian Citizen</span>
-                                        <span className="text-gray-900 font-bold flex items-center gap-1">
-                                            <CheckCircle className="w-5 h-5" />
-                                            Match
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200">
-                                        <span className="font-bold text-gray-700">Income &lt; ₹2.5L</span>
-                                        <span className="text-gray-900 font-bold flex items-center gap-1">
-                                            <CheckCircle className="w-5 h-5" />
-                                            Match
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeSection === 'documents' && (
-                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-900">
-                                        <Files className="w-5 h-5" />
-                                    </span>
-                                    Required Documents
-                                </h2>
-                                <div className="grid md:grid-cols-2 gap-4">
-                                    {['Aadhar Card', 'Income Certificate', 'Caste Certificate', 'Bank Passbook', 'Passport Photo', 'Previous Marksheet'].map((doc, i) => (
-                                        <div key={i} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:bg-gray-100 transition-colors">
-                                            <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                {activeSection === 'eligibility' && (
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
+                                            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+                                                <HeartPulse className="w-6 h-6" />
                                             </div>
-                                            <span className="font-bold text-gray-700">{doc}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-slate-900 font-heading">Demographic Eligibility</h2>
+                                                <p className="text-sm text-slate-500 font-medium">{user ? "Cross-referenced with your profile" : "General requirements"}</p>
+                                            </div>
+                                         </div>
 
-                        {activeSection === 'apply' && (
-                            <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
-                                    <span className="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center">
-                                        <Rocket className="w-5 h-5" />
-                                    </span>
-                                    Ready to Apply?
-                                </h2>
+                                         {!user && (
+                                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-8 flex items-center justify-between shadow-sm">
+                                                <div className="flex items-center gap-4">
+                                                    <Lock className="text-blue-600 w-5 h-5"/>
+                                                    <p className="text-blue-900 font-bold text-sm">Log in to let AI automatically calculate your eligibility matrix.</p>
+                                                </div>
+                                                <Link href="/login" className="bg-blue-600 text-white font-bold text-xs px-4 py-2 rounded-lg hover:bg-blue-700 transition">Log In</Link>
+                                            </div>
+                                         )}
 
-                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center mb-8">
-                                    <p className="text-gray-900 font-bold text-lg mb-2">Proceed to Official Portal</p>
-                                    <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto">You will be redirected to the official government website to complete your application.</p>
-                                    <button className="px-8 py-4 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-lg shadow-xl shadow-gray-900/10 hover:translate-y-[-2px] transition-all flex items-center gap-2 mx-auto">
-                                        Apply Now on Official Website
-                                        <Globe className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h3 className="font-bold text-gray-900">Application Steps:</h3>
-                                    <div className="flex gap-4 items-start">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm flex-shrink-0">1</div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Register on Portal</p>
-                                            <p className="text-sm text-gray-500">Create an account using your Aadhar and Mobile number.</p>
-                                        </div>
+                                         <div className="space-y-4">
+                                            {scheme.eligibility.split('\n').filter(Boolean).map((e, i) => (
+                                                <div key={i} className="flex justify-between items-center bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+                                                    <span className="text-slate-700 font-medium text-lg">{e.replace(/^- /, '')}</span>
+                                                </div>
+                                            ))}
+                                            
+                                            {scheme.ageMin && (
+                                                <div className="flex justify-between items-center bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+                                                    <span className="text-slate-700 font-medium text-lg">Minimum Age Required</span>
+                                                    <span className="bg-white border text-sm font-bold px-3 py-1 rounded-lg shadow-sm">{scheme.ageMin} Years</span>
+                                                </div>
+                                            )}
+                                         </div>
                                     </div>
-                                    <div className="flex gap-4 items-start">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm flex-shrink-0">2</div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Fill Application Form</p>
-                                            <p className="text-sm text-gray-500">Enter your personal, academic, and bank details accurately.</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-4 items-start">
-                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-500 text-sm flex-shrink-0">3</div>
-                                        <div>
-                                            <p className="font-bold text-gray-900">Upload Documents</p>
-                                            <p className="text-sm text-gray-500">Upload scanned copies of required documents in PDF/JPG format.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                                )}
 
+                                {activeSection === 'documents' && (
+                                     <div className="relative z-10">
+                                         <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
+                                            <div className="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center shadow-sm">
+                                                <Files className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-2xl font-bold text-slate-900 font-heading">Required Documentation</h2>
+                                                <p className="text-sm text-slate-500 font-medium">Gather these files before starting.</p>
+                                            </div>
+                                         </div>
+                                         <div className="grid md:grid-cols-2 gap-4">
+                                            {(scheme.documentsRequired && scheme.documentsRequired.length > 0) ? scheme.documentsRequired.map((doc, idx) => (
+                                                <div key={idx} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow group">
+                                                    <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-teal-600 transition-colors">
+                                                        <FileText className="w-5 h-5"/>
+                                                    </div>
+                                                    <span className="font-bold text-slate-700">{doc}</span>
+                                                </div>
+                                            )) : (
+                                                ['Aadhar Card', 'Bank Passbook', 'Passport Photo', 'Income Proof'].map((doc, idx) => (
+                                                    <div key={idx} className="bg-slate-50 border border-slate-200 p-5 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow group">
+                                                        <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-teal-600 transition-colors">
+                                                            <FileText className="w-5 h-5"/>
+                                                        </div>
+                                                        <span className="font-bold text-slate-700">{doc}</span>
+                                                    </div>
+                                                ))
+                                            )}
+                                         </div>
+                                     </div>
+                                )}
+
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </div>
-
             </div>
+
+            {/* Application Modal */}
+            <AnimatePresence>
+                {isApplyModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setIsApplyModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+                        />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+                            animate={{ opacity: 1, scale: 1, y: 0 }} 
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden"
+                        >
+                            <div className="p-8 md:p-10 text-center relative bg-gradient-to-br from-blue-50 to-white">
+                                <div className="absolute top-4 right-4 cursor-pointer p-2 text-slate-400 hover:text-slate-700 bg-white rounded-full shadow-sm" onClick={() => setIsApplyModalOpen(false)}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </div>
+                                
+                                <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner relative">
+                                    <Rocket className="w-10 h-10 translate-x-[2px] -translate-y-[2px]" />
+                                    <div className="absolute top-1 right-1 w-3 h-3 bg-teal-400 rounded-full shadow-sm animate-pulse" />
+                                </div>
+
+                                <h2 className="text-2xl font-black text-slate-900 mb-2 font-heading">Application Protocol</h2>
+                                <p className="text-slate-500 font-medium text-sm max-w-sm mx-auto">You will be securely redirected to the official government portal to map this application.</p>
+                            </div>
+                            
+                            <div className="p-8 md:p-10 bg-white">
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex items-center gap-4 text-sm font-bold text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <div className="w-6 h-6 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xs">1</div>
+                                        <span>Prepare all noted documents</span>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm font-bold text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <div className="w-6 h-6 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-xs">2</div>
+                                        <span>Register securely on destination portal</span>
+                                    </div>
+                                </div>
+
+                                <a 
+                                    href={scheme.applicationUrl || "#"} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    onClick={() => setIsApplyModalOpen(false)}
+                                    className="w-full py-4 bg-blue-800 hover:bg-blue-700 text-white rounded-xl font-bold text-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-3"
+                                >
+                                    <Globe className="w-5 h-5" /> Proceed to Portal
+                                </a>
+                                <p className="text-center mt-4 text-xs font-bold text-slate-400 uppercase tracking-widest"><Lock className="inline w-3 h-3 mb-0.5"/> 256-Bit TLS Redirect</p>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </main>
     );
 }

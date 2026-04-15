@@ -12,8 +12,11 @@ import {
     Info,
     Calendar,
     ArrowRight,
-    Loader2
+    Loader2,
+    Database,
+    AlertCircle
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function NewsPage() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -131,30 +134,39 @@ export default function NewsPage() {
     });
 
     return (
-        <main className="min-h-screen pb-20 bg-[#f3f0e9] font-sans text-gray-900">
-            {/* 1. HERO SECTION */}
-            <section className="relative w-full pt-32 pb-12 flex items-center justify-center overflow-hidden bg-[#111111] text-white">
-                {/* Background Grid Pattern */}
-                <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-100px,#1a1a1a,transparent)]"></div>
+        <main className="min-h-screen pb-20 bg-slate-50 font-sans text-slate-900">
+            {/* 1. HERO SECTION (Premium Light Theme) */}
+            <section className="relative w-full pt-32 pb-16 flex items-center justify-center overflow-hidden bg-white border-b border-slate-100">
+                {/* Abstract Background Elements */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-teal-50/60 blur-[100px]"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_40%,#000_70%,transparent_100%)]"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center flex flex-col items-center">
                     {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 shadow-sm mb-8">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                        <span className="tracking-widest uppercase text-[10px] font-bold">Government Spotlight</span>
-                    </div>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-sm font-bold text-blue-700 mb-8 shadow-sm"
+                    >
+                        <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse"></span>
+                        Government Spotlight
+                    </motion.div>
 
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-8">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-slate-900 font-heading"
+                    >
                         Stay <br />
-                        <span className="text-white">Informed</span>
-                    </h1>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-teal-600">Informed</span>
+                    </motion.h1>
 
-                    <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
-                        The latest updates on policy changes, deadline extensions, and government announcements across India.
-                    </p>
+                    <motion.p 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                        className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-medium leading-relaxed"
+                    >
+                        The latest updates on policy changes, deadline extensions, and critical government announcements directly from authorized sources.
+                    </motion.p>
                 </div>
             </section>
 
@@ -170,13 +182,13 @@ export default function NewsPage() {
                     ].map((stat, i) => {
                         const Icon = stat.icon;
                         return (
-                            <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:-translate-y-1 transition-all">
-                                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-                                    <Icon className="w-5 h-5 text-gray-900" />
+                            <div key={i} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-4 hover:-translate-y-1 transition-all hover:shadow-md">
+                                <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100">
+                                    <Icon className="w-5 h-5 text-blue-700" />
                                 </div>
                                 <div>
-                                    <p className="text-xl font-bold text-gray-900">{stat.value}</p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{stat.label}</p>
+                                    <p className="text-2xl font-bold text-slate-900 leading-tight">{stat.value}</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{stat.label}</p>
                                 </div>
                             </div>
                         );
@@ -235,52 +247,56 @@ export default function NewsPage() {
                         </h3>
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid md:grid-cols-2 gap-6 mb-12">
                         {isLoading ? (
                             [1, 2, 3, 4].map(n => (
-                                <div key={n} className="bg-white rounded-2xl h-64 animate-pulse border border-gray-100 shadow-sm"></div>
+                                <div key={n} className="bg-white rounded-3xl h-64 animate-pulse border border-slate-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 flex flex-col justify-between">
+                                    <div className="w-1/4 h-6 bg-slate-100 rounded"></div>
+                                    <div className="w-full h-8 bg-slate-100 rounded mb-2"></div>
+                                    <div className="w-2/3 h-5 bg-slate-50 rounded"></div>
+                                    <div className="w-full h-12 bg-slate-100 rounded-xl mt-4"></div>
+                                </div>
                             ))
+                        ) : filteredNews.length === 0 ? (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="col-span-full py-16 bg-white rounded-3xl border border-dashed border-slate-300 text-center shadow-sm flex flex-col items-center">
+                                <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-900 font-bold text-lg mb-2">No updates found</p>
+                                <p className="text-slate-500 font-medium">Try adjusting your filters or checking back later.</p>
+                            </motion.div>
                         ) : filteredNews.map((news) => (
-                            <div key={news.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md relative overflow-hidden">
+                            <div key={news.id} className="bg-white rounded-2xl p-8 border border-slate-200 hover:border-slate-300 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-[0_20px_40px_-10px_rgba(30,64,175,0.1)] hover:-translate-y-1 relative overflow-hidden">
                                 {/* Category Badge */}
                                 <div className="flex justify-between items-start mb-6">
-                                    <span className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                    <span className="bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
                                         {news.category}
                                     </span>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                                         <Calendar className="w-3 h-3" />
                                         {news.date}
                                     </div>
                                 </div>
 
                                 {/* Content */}
-                                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:underline decoration-2 underline-offset-4">
+                                <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:underline decoration-2 underline-offset-4 font-heading">
                                     {news.title}
                                 </h3>
                                 
-                                <p className="text-gray-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
+                                <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
                                     {news.description}
                                 </p>
 
                                 {/* Footer */}
-                                <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between">
+                                <div className="mt-auto pt-6 border-t border-slate-100 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <span className="text-2xl">{news.icon}</span>
-                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Verified Update</span>
+                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verified Update</span>
                                     </div>
-                                    <button className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white hover:bg-black rounded-lg text-sm font-bold transition-all shadow-lg shadow-gray-900/10">
+                                    <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-800 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-sm">
                                         Read More <ArrowRight className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
                         ))}
-
-                        {filteredNews.length === 0 && (
-                            <div className="col-span-full py-20 bg-white rounded-3xl border border-dashed border-gray-300 text-center">
-                                <Info className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-500 font-bold">No news articles found matching your criteria.</p>
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>

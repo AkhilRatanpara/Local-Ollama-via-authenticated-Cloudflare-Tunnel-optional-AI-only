@@ -3,16 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { useToast } from "@/context/ToastContext";
+import { UserPlus, Mail, Lock, User, Loader2, ArrowRight } from "lucide-react";
 
 export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        setError("");
 
         const form = e.target as HTMLFormElement;
         const name = (form.elements[0] as HTMLInputElement).value;
@@ -31,109 +33,122 @@ export default function RegisterPage() {
                 throw new Error(data.message || "Registration failed");
             }
 
-            // Autologin after successful register
-            const loginRes = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-
-            if (loginRes.ok) {
-                // Force hard reload or state update if needed, but router push works
-                router.push("/profile/setup");
-            } else {
-                router.push("/login?message=Account created, please login");
-            }
+            toast("success", "Account Created", "Successfully created your account. Please log in.");
+            router.push("/login");
         } catch (err: any) {
-            setError(err.message);
+             toast("error", "Registration Failed", err.message);
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <main className="min-h-screen pt-32 pb-20 bg-[#f3f0e9] flex items-center justify-center px-4">
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 animate-fade-in-up">
+        <main className="min-h-screen py-24 md:py-32 bg-slate-50 flex items-center justify-center px-4 relative overflow-hidden font-sans">
+            {/* Abstract Background Elements */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-teal-50/60 blur-[100px]"></div>
+                <div className="absolute bottom-[-20%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-blue-50/60 blur-[100px]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+            </div>
 
+            <motion.div 
+                initial={{ opacity: 0, y: 20, scale: 0.95 }} 
+                animate={{ opacity: 1, y: 0, scale: 1 }} 
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="max-w-md w-full bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(30,64,175,0.1)] border border-slate-200 overflow-hidden relative z-10"
+            >
                 {/* Header */}
-                <div className="bg-[#111111] p-8 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:16px_16px]"></div>
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_400px_at_50%_-100px,#1a1a1a,transparent)]"></div>
-
-                    <h1 className="text-3xl font-extrabold text-white mb-2 relative z-10">Create Account</h1>
-                    <p className="text-gray-400 relative z-10">Join Sangam and discover your benefits.</p>
+                <div className="p-8 md:p-10 text-center relative border-b border-slate-100 bg-gradient-to-b from-white to-slate-50/50">
+                    <div className="w-16 h-16 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                        <UserPlus className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 mb-2 font-heading tracking-tight">Create Account</h1>
+                    <p className="text-slate-500 font-medium">Join SANGAM to discover your eligible government schemes.</p>
                 </div>
 
                 {/* Form */}
-                <div className="p-8">
-                    <form onSubmit={handleRegister} className="space-y-6">
-                        {error && <div className="text-red-500 text-sm text-center font-bold bg-red-50 p-2 rounded-lg">{error}</div>}
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Full Name</label>
-                            <input
-                                name="name"
-                                type="text"
-                                className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-medium"
-                                placeholder="John Doe"
-                                required
-                            />
+                <div className="p-8 md:p-10 pt-8">
+                    <form onSubmit={handleRegister} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Full Name</label>
+                            <div className="relative group">
+                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                                <input
+                                    name="name"
+                                    type="text"
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    placeholder="Ramesh Kumar"
+                                    required
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
-                            <input
-                                name="email"
-                                type="email"
-                                className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-medium"
-                                placeholder="you@example.com"
-                                required
-                            />
+                        <div className="space-y-1.5 pt-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Email Address</label>
+                            <div className="relative group">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                                <input
+                                    name="email"
+                                    type="email"
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    placeholder="you@example.com"
+                                    required
+                                />
+                            </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Password</label>
-                            <input
-                                name="password"
-                                type="password"
-                                className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-medium"
-                                placeholder="••••••••"
-                                required
-                            />
+                        <div className="space-y-1.5 pt-2">
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">Password</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                                <input
+                                    name="password"
+                                    type="password"
+                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-[#111111] text-white font-bold py-4 rounded-xl shadow-lg hover:bg-black hover:-translate-y-1 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
+                            className="w-full mt-6 bg-blue-800 text-white font-bold py-4 rounded-xl shadow-[0_8px_20px_rgb(30,64,175,0.2)] hover:bg-blue-700 hover:shadow-[0_8px_25px_rgb(30,64,175,0.3)] hover:-translate-y-0.5 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                         >
                             {isLoading ? (
-                                <span className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                <>
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    <span>Registering...</span>
+                                </>
                             ) : (
-                                "Create Account"
+                                <>
+                                    <span>Sign Up</span>
+                                    <ArrowRight className="w-5 h-5" />
+                                </>
                             )}
                         </button>
                     </form>
 
                     <div className="mt-8 relative text-center">
-                        <div className="absolute top-1/2 left-0 w-full h-px bg-gray-200"></div>
-                        <span className="relative bg-white px-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Or Register With</span>
+                        <div className="absolute top-1/2 left-0 w-full h-px bg-slate-200"></div>
+                        <span className="relative bg-white px-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Or Register With</span>
                     </div>
 
                     <div className="mt-8 grid grid-cols-2 gap-4">
-                        <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
+                        <button className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-700 shadow-sm">
                             <span className="text-xl">G</span> Google
                         </button>
-                        <button className="flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-bold text-gray-700">
+                        <button className="flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all font-bold text-slate-700 shadow-sm">
                             <span className="text-xl text-blue-600">e</span> e-Pramaan
                         </button>
                     </div>
 
-                    <p className="mt-8 text-center text-sm text-gray-500">
-                        Already have an account? <Link href="/login" className="text-blue-600 font-bold hover:underline">Login</Link>
+                    <p className="mt-8 text-center text-sm font-medium text-slate-500">
+                        Already have an account? <Link href="/login" className="text-blue-700 font-bold hover:underline">Log in safely</Link>
                     </p>
                 </div>
-            </div>
+            </motion.div>
         </main>
     );
 }

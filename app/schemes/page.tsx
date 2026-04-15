@@ -17,8 +17,12 @@ import {
     Coins,
     Users,
     Landmark,
-    Loader2
+    Loader2,
+    Database,
+    AlertCircle,
+    Lock
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Scheme {
     id: string;
@@ -208,43 +212,46 @@ export default function SchemesPage() {
     };
 
     return (
-        <main className="min-h-screen pb-20 bg-[#f3f0e9] font-sans text-gray-900 selection:bg-blue-100 selection:text-blue-900">
+        <main className="min-h-screen pb-20 bg-slate-50 font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
 
-            {/* 1. HERO SECTION (Adapted from Home Page Design) */}
-            <section className="relative w-full pt-32 pb-12 flex items-center justify-center overflow-hidden bg-[#111111] text-white">
-
-                {/* Background Grid Pattern */}
-                <div className="absolute inset-0 z-0 pointer-events-none">
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:32px_32px]"></div>
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-100px,#1a1a1a,transparent)]"></div>
+            {/* 1. HERO SECTION (Premium Light Theme) */}
+            <section className="relative w-full pt-32 pb-16 flex items-center justify-center overflow-hidden bg-white border-b border-slate-100">
+                {/* Abstract Background Elements */}
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                    <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-blue-50/60 blur-[100px]"></div>
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_40%,#000_70%,transparent_100%)]"></div>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center flex flex-col items-center">
+                    <motion.div 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-sm font-bold text-blue-700 mb-8 shadow-sm"
+                    >
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        National Portal Database
+                    </motion.div>
 
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-gray-300 shadow-sm mb-8">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                        <span className="tracking-widest uppercase text-[10px] font-bold">National Portal</span>
-                    </div>
-
-                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-8">
+                    <motion.h1 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                        className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-slate-900 font-heading"
+                    >
                         Discover Your <br />
-                        <span className="text-white">Perfect Scheme</span>
-                    </h1>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-indigo-600">Perfect Scheme</span>
+                    </motion.h1>
 
-                    <p className="text-gray-400 text-lg md:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
-                        Access over {totalSchemes > 0 ? totalSchemes + '+' : '110+'} government opportunities tailored to your profile.
-                        AI-powered matching ensures you never miss a benefit.
-                    </p>
-
-
+                    <motion.p 
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                        className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed"
+                    >
+                        Access over {totalSchemes > 0 ? totalSchemes + '+' : '110+'} government opportunities perfectly sorted by our AI matching engine. Never miss a benefit again.
+                    </motion.p>
                 </div>
             </section>
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 mt-12 relative z-20">
 
                 {/* 2. RECOMMENDATIONS SECTION (Restored Grid/Slider Logic) */}
-                {user && (
+                {user ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
@@ -265,7 +272,16 @@ export default function SchemesPage() {
                         {recLoading ? (
                             <div className="grid md:grid-cols-3 gap-6">
                                 {[1, 2, 3].map((i) => (
-                                    <div key={i} className="bg-white rounded-2xl h-64 animate-pulse shadow-sm border border-gray-100"></div>
+                                    <div key={i} className="bg-white rounded-2xl h-[280px] animate-pulse shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200">
+                                        <div className="p-6 h-full flex flex-col justify-between">
+                                            <div className="w-1/3 h-6 bg-slate-100 rounded-md mb-4"></div>
+                                            <div className="space-y-3">
+                                                <div className="w-full h-8 bg-slate-100 rounded-md"></div>
+                                                <div className="w-5/6 h-5 bg-slate-50 rounded-md"></div>
+                                            </div>
+                                            <div className="w-full h-12 bg-slate-100 rounded-xl mt-6"></div>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         ) : recommendations.length > 0 ? (
@@ -279,11 +295,11 @@ export default function SchemesPage() {
 
                                             </div>
                                             <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:underline decoration-2 underline-offset-4">{scheme.title}</h3>
-                                            <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Why this matches</p>
-                                                <p className="text-sm text-gray-700 font-medium leading-relaxed">"{scheme.matchReason || "Matches your profile criteria."}"</p>
+                                            <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6">
+                                                <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><HeartPulse size={12}/> AI Insight</p>
+                                                <p className="text-sm text-slate-700 font-medium leading-relaxed">"{scheme.matchReason || "Matched extremely well based on your demographic profile."}"</p>
                                             </div>
-                                            <Link href={`/schemes/${scheme.id}`} className="block w-full text-center py-3 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-bold rounded-xl text-sm transition-all">
+                                            <Link href={`/schemes/${scheme.id}`} className="block w-full text-center py-3 border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold rounded-xl text-sm transition-all shadow-sm">
                                                 View Details
                                             </Link>
                                         </div>
@@ -291,10 +307,25 @@ export default function SchemesPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center">
-                                <p className="text-gray-500 font-medium">No specific recommendations found.</p>
-                            </div>
+                             <div className="bg-white rounded-[2rem] border border-blue-100 p-8 text-center flex flex-col justify-center items-center h-[280px]">
+                                <AlertCircle className="w-12 h-12 text-blue-300 mb-4" />
+                                <h3 className="text-xl font-bold text-slate-800">No AI Recommendations Yet</h3>
+                                <p className="text-slate-500 mb-4 max-w-sm mt-2">Complete your profile schema in settings so our engine can detect matches.</p>
+                             </div>
                         )}
+                    </div>
+                ) : (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 relative overflow-hidden bg-gradient-to-br from-indigo-50/50 to-white border border-slate-200 rounded-[2rem] p-10 flex flex-col items-center justify-center text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                        <div className="w-16 h-16 bg-white border border-slate-100 shadow-sm rounded-full flex items-center justify-center mb-6 relative group">
+                            <Lock className="w-6 h-6 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></div>
+                        </div>
+                        <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-heading mb-3">AI Scheme Mapping Restricted</h2>
+                        <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">Our advanced matchmaking engine instantly cross-references your profile deeply across 850+ national schemas. Login to see personalized scheme recommendations.</p>
+                        <Link href="/login" className="bg-slate-900 text-white font-bold px-8 py-3.5 rounded-full shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
+                           Secure Login <ChevronRight className="w-4 h-4" />
+                        </Link>
                     </div>
                 )}
 
@@ -351,6 +382,14 @@ export default function SchemesPage() {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery("")}
+                                    className="mr-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                </button>
+                            )}
                         </div>
                         {debouncedSearch && (
                             <div className="mt-2 text-center">
@@ -379,9 +418,29 @@ export default function SchemesPage() {
 
                     {loading ? (
                         <div className="grid md:grid-cols-2 gap-6">
-                            {[1, 2, 3, 4].map(n => <div key={n} className="bg-white rounded-3xl h-80 animate-pulse border border-gray-100"></div>)}
+                            {[1, 2, 3, 4].map(n => (
+                                <div key={n} className="bg-white rounded-3xl h-[320px] animate-pulse border border-slate-200 p-8 flex flex-col justify-between shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="w-20 h-6 bg-slate-100 rounded"></div>
+                                        <div className="w-16 h-6 bg-slate-100 rounded"></div>
+                                    </div>
+                                    <div className="w-3/4 h-8 bg-slate-100 rounded mb-4"></div>
+                                    <div className="w-full h-16 bg-slate-50 rounded mb-8"></div>
+                                    <div className="flex justify-between border-t border-slate-100 pt-6">
+                                       <div className="w-24 h-4 bg-slate-100 rounded"></div>
+                                       <div className="w-32 h-10 bg-slate-100 rounded-xl"></div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
+                        schemes.length === 0 ? (
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="bg-white rounded-3xl p-16 text-center border border-dashed border-slate-300 shadow-sm flex flex-col items-center">
+                                <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
+                                <h3 className="text-xl font-bold text-slate-900 mb-2">No Schemes Found</h3>
+                                <p className="text-slate-500">We couldn't find any schemes matching "{debouncedSearch}". Try adjusting your filters or search terms.</p>
+                            </motion.div>
+                        ) : (
                         <div className="grid md:grid-cols-2 gap-6 mb-12">
                             {schemes.map((scheme) => (
                                 <div key={scheme.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md">
@@ -414,6 +473,7 @@ export default function SchemesPage() {
                                 </div>
                             ))}
                         </div>
+                        )
                     )}
 
                     {/* Pagination */}

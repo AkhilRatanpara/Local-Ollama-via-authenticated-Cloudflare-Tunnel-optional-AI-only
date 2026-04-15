@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import FloatingChatbot from "./components/Chatbot";
 import { AuthProvider } from "@/context/AuthContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 const jakarta = Plus_Jakarta_Sans({ 
   subsets: ["latin"],
@@ -27,15 +28,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${jakarta.variable} ${outfit.variable} font-sans overflow-x-hidden bg-[#050B14] text-slate-200 antialiased selection:bg-blue-500/30 selection:text-blue-200`}>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning className={`${jakarta.variable} ${outfit.variable} font-sans overflow-x-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/40 via-slate-50/20 to-white min-h-screen text-slate-900 antialiased selection:bg-indigo-500/30 selection:text-indigo-900`}>
         <AuthProvider>
-          <Navbar />
-          <div className="relative w-full overflow-x-hidden">
-            {children}
-          </div>
-          <Footer />
-          <FloatingChatbot />
+          <ToastProvider>
+            <Navbar />
+            <div className="relative w-full overflow-x-hidden">
+              {children}
+            </div>
+            <Footer />
+            <FloatingChatbot />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

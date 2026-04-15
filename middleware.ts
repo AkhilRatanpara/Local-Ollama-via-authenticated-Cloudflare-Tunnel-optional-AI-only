@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protected Routes (Add more as needed)
-  const protectedRoutes = ["/profile", "/schemes", "/loans", "/categories", "/news"];
+  const protectedRoutes = ["/profile", "/settings"];
   
   // Public Routes (Login, Register, Home)
   const isPublicRoute = 

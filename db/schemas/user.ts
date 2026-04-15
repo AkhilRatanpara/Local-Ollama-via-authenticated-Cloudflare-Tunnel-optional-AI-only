@@ -23,6 +23,10 @@ export const users = pgTable("users", {
   motherName: text("mother_name"),
   motherProfession: text("mother_profession"),
 
+  // Demographics
+  caste: text("caste"),
+  address: text("address"),
+
   // Documents & IDs
   aadhar: text("aadhar"),
   pan: text("pan"),
