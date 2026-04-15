@@ -10,9 +10,27 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
+const Switch = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button
+        type="button"
+        onClick={(e) => {
+            e.stopPropagation();
+            onChange();
+        }}
+        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+            checked ? "bg-blue-600" : "bg-slate-200"
+        }`}
+    >
+        <motion.span
+            animate={{ x: checked ? 20 : 0 }}
+            className="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out"
+        />
+    </button>
+);
+
 export default function SettingsPage() {
     const { user, loading } = useAuth();
-    const [activeTab, setActiveTab] = useState("account");
+    const [activeTab, setActiveTab] = useState("preferences");
     const [isSaving, setIsSaving] = useState(false);
     
     // Form States
@@ -110,7 +128,6 @@ export default function SettingsPage() {
     }
 
     const tabs = [
-        { id: "account", label: "Account Details", icon: User },
         { id: "preferences", label: "Preferences", icon: Bell },
         { id: "appearance", label: "Appearance", icon: Palette },
         { id: "security", label: "Security", icon: Shield }
@@ -173,150 +190,7 @@ export default function SettingsPage() {
                     <div className="flex-1 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 overflow-hidden min-h-[600px] relative">
                         <AnimatePresence mode="wait">
                             
-                            {/* ACCOUNT TAB */}
-                            {activeTab === "account" && (
-                                <motion.div key="account" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-15}} className="p-8 md:p-10">
-                                    <div className="mb-10 pb-6 border-b border-slate-100 flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
-                                            <User className="w-6 h-6"/>
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-bold text-slate-900 font-heading">Core Demographics</h2>
-                                            <p className="text-sm text-slate-500 font-medium">This identity is verified across all national AI mappings.</p>
-                                        </div>
-                                    </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Legal Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={formState.name}
-                                                onChange={e => setFormState({...formState, name: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Email Connection</label>
-                                            <input 
-                                                type="email" 
-                                                value={formState.email}
-                                                disabled
-                                                className="w-full bg-slate-100 border border-slate-200 rounded-xl px-4 py-3 text-slate-500 font-medium cursor-not-allowed opacity-80"
-                                            />
-                                            <p className="text-[10px] uppercase font-bold tracking-widest text-slate-400 mt-2 ml-1 flex items-center gap-1"><Lock className="w-3 h-3"/> Immutable Marker</p>
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Mobile Carrier</label>
-                                            <div className="flex">
-                                                <span className="inline-flex items-center px-4 rounded-l-xl border border-r-0 border-slate-200 bg-slate-100 text-slate-500 font-bold text-sm">+91</span>
-                                                <input 
-                                                    type="tel" 
-                                                    value={formState.phone}
-                                                    onChange={e => setFormState({...formState, phone: e.target.value})}
-                                                    className="w-full bg-slate-50 border border-slate-200 rounded-r-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Postal Address / Region</label>
-                                            <input 
-                                                type="text" 
-                                                value={formState.address}
-                                                onChange={e => setFormState({...formState, address: e.target.value})}
-                                                placeholder="e.g. Pune, Maharashtra"
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                            />
-                                        </div>
-
-                                        <div className="md:col-span-2 mt-4 pt-6 border-t border-slate-100 pb-2">
-                                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-1">Family & Economics</h3>
-                                            <p className="text-xs font-medium text-slate-500">Crucial for state subsidy analysis</p>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Father's Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={formState.fatherName}
-                                                onChange={e => setFormState({...formState, fatherName: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Mother's Name</label>
-                                            <input 
-                                                type="text" 
-                                                value={formState.motherName}
-                                                onChange={e => setFormState({...formState, motherName: e.target.value})}
-                                                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Annual Income Bracket</label>
-                                            <div className="relative">
-                                                <select 
-                                                    value={formState.income}
-                                                    onChange={e => setFormState({...formState, income: e.target.value})}
-                                                    className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                                >
-                                                    <option value="" disabled>Select Income Range...</option>
-                                                    <option value="below_1lakh">Below ₹1,00,000</option>
-                                                    <option value="1_to_2.5_lakh">₹1,00,000 - ₹2,50,000</option>
-                                                    <option value="2.5_to_5_lakh">₹2,50,000 - ₹5,00,000</option>
-                                                    <option value="5_to_8_lakh">₹5,00,000 - ₹8,00,000</option>
-                                                    <option value="above_8lakh">Above ₹8,00,000</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Social Category (Caste)</label>
-                                            <div className="relative">
-                                                <select 
-                                                    value={formState.caste}
-                                                    onChange={e => setFormState({...formState, caste: e.target.value})}
-                                                    className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                                >
-                                                    <option value="" disabled>Select Segment...</option>
-                                                    <option value="General">General / Unreserved</option>
-                                                    <option value="OBC">Other Backward Class (OBC)</option>
-                                                    <option value="SC">Scheduled Caste (SC)</option>
-                                                    <option value="ST">Scheduled Tribe (ST)</option>
-                                                    <option value="EWS">Economically Weaker Section (EWS)</option>
-                                                    <option value="Minority">Minority Category</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 pl-1">Primary Occupation</label>
-                                            <div className="relative">
-                                                <select 
-                                                    value={formState.occupation}
-                                                    onChange={e => setFormState({...formState, occupation: e.target.value})}
-                                                    className="w-full appearance-none bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
-                                                >
-                                                    <option value="" disabled>Select Trade/Status...</option>
-                                                    <option value="Student">Student / Academic</option>
-                                                    <option value="Farmer">Farmer / Agriculture</option>
-                                                    <option value="Salaried">Salaried Employee</option>
-                                                    <option value="SelfEmployed">Self Employed / Business</option>
-                                                    <option value="Unemployed">Unemployed / Seeking Work</option>
-                                                    <option value="Other">Other Category</option>
-                                                </select>
-                                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
 
                             {/* PREFERENCES TAB */}
                             {activeTab === "preferences" && (
@@ -359,9 +233,10 @@ export default function SettingsPage() {
                                                         <p className="text-xs text-slate-500 font-medium mt-0.5">Automated scheme drops straight into your inbox.</p>
                                                     </div>
                                                 </div>
-                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formState.notificationsEmail ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                                                    <motion.div layout className={`w-4 h-4 bg-white rounded-full ${formState.notificationsEmail ? 'translate-x-6' : ''}`}></motion.div>
-                                                </div>
+                                                <Switch 
+                                                    checked={formState.notificationsEmail} 
+                                                    onChange={() => setFormState(p => ({...p, notificationsEmail: !p.notificationsEmail}))} 
+                                                />
                                             </div>
 
                                             <div className="flex items-center justify-between p-5 border border-slate-200 rounded-2xl bg-white shadow-sm hover:border-blue-200 transition-colors cursor-pointer group" onClick={() => setFormState(p => ({...p, notificationsSMS: !p.notificationsSMS}))}>
@@ -372,9 +247,10 @@ export default function SettingsPage() {
                                                         <p className="text-xs text-slate-500 font-medium mt-0.5">Critical application deadlines directly to your phone.</p>
                                                     </div>
                                                 </div>
-                                                <div className={`w-12 h-6 rounded-full p-1 transition-colors ${formState.notificationsSMS ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                                                    <motion.div layout className={`w-4 h-4 bg-white rounded-full ${formState.notificationsSMS ? 'translate-x-6' : ''}`}></motion.div>
-                                                </div>
+                                                <Switch 
+                                                    checked={formState.notificationsSMS} 
+                                                    onChange={() => setFormState(p => ({...p, notificationsSMS: !p.notificationsSMS}))} 
+                                                />
                                             </div>
                                         </div>
                                     </div>

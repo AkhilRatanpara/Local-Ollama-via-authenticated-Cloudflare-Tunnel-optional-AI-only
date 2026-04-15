@@ -21,7 +21,7 @@ export async function PUT(request: Request) {
     const { 
         mobile, dob, gender, category, occupation, income, location,
         fatherName, fatherProfession, motherName, motherProfession,
-        aadhar, pan, name
+        aadhar, pan, name, caste, address, documents
     } = body;
 
     const updatedUser = await db
@@ -39,8 +39,11 @@ export async function PUT(request: Request) {
         fatherProfession, 
         motherName, 
         motherProfession,
+        caste,
+        address,
         aadhar, 
         pan,
+        documents,
         updatedAt: new Date(),
       })
       .where(eq(users.id, userId))

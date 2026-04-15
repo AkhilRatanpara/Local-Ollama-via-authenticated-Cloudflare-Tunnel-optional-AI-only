@@ -34,6 +34,8 @@ export async function GET(request: Request) {
         fatherProfession: users.fatherProfession,
         motherName: users.motherName,
         motherProfession: users.motherProfession,
+        caste: users.caste,
+        address: users.address,
         aadhar: users.aadhar,
         pan: users.pan,
         documents: users.documents,

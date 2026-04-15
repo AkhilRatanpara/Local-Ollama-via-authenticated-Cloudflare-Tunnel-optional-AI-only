@@ -60,8 +60,11 @@ export async function POST(request: Request) {
       path: "/",
     });
 
+    // Exclude password from the returned user object
+    const { password: _, ...userWithoutPassword } = user;
+
     return NextResponse.json(
-      { message: "Logged in successfully", user: sessionPayload },
+      { message: "Logged in successfully", user: userWithoutPassword },
       { status: 200 }
     );
   } catch (error) {

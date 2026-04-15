@@ -16,6 +16,8 @@ interface User {
     occupation?: string;
     income?: string;
     location?: string;
+    caste?: string;
+    address?: string;
     fatherName?: string;
     fatherProfession?: string;
     motherName?: string;

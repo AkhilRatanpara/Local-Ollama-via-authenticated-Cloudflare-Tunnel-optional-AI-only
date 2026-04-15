@@ -44,7 +44,7 @@ export async function POST(request: Request) {
             .set({
                 name: name !== undefined ? name : undefined,
                 mobile: mobile !== undefined ? mobile : undefined,
-                dob: dob !== undefined ? new Date(dob) : undefined,
+                dob: dob !== undefined ? dob : undefined,
                 gender: gender !== undefined ? gender : undefined,
                 category: category !== undefined ? category : undefined,
                 occupation: occupation !== undefined ? occupation : undefined,

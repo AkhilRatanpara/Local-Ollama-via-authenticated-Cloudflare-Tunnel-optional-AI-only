@@ -36,7 +36,7 @@ export default function RegisterPage() {
             toast("success", "Account Created", "Successfully created your account. Please log in.");
             router.push("/login");
         } catch (err: any) {
-             toast("error", "Registration Failed", err.message);
+            toast("error", "Registration Failed", err.message);
         } finally {
             setIsLoading(false);
         }
@@ -51,9 +51,9 @@ export default function RegisterPage() {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] bg-[size:40px_40px]"></div>
             </div>
 
-            <motion.div 
-                initial={{ opacity: 0, y: 20, scale: 0.95 }} 
-                animate={{ opacity: 1, y: 0, scale: 1 }} 
+            <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="max-w-md w-full bg-white/80 backdrop-blur-xl rounded-[2rem] shadow-[0_20px_50px_-10px_rgba(30,64,175,0.1)] border border-slate-200 overflow-hidden relative z-10"
             >
@@ -76,7 +76,7 @@ export default function RegisterPage() {
                                 <input
                                     name="name"
                                     type="text"
-                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    className="w-[83%] pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
                                     placeholder="Ramesh Kumar"
                                     required
                                 />
@@ -90,7 +90,7 @@ export default function RegisterPage() {
                                 <input
                                     name="email"
                                     type="email"
-                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    className="w-[83%] pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
                                     placeholder="you@example.com"
                                     required
                                 />
@@ -104,7 +104,7 @@ export default function RegisterPage() {
                                 <input
                                     name="password"
                                     type="password"
-                                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                    className="w-[83%] pl-11 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-900 placeholder:text-slate-400"
                                     placeholder="••••••••"
                                     required
                                 />
