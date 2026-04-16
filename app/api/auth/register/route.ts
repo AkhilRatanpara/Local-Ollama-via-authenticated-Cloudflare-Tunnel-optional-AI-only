@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   try {
     const { 
         name, email, password,
-        mobile, dob, gender, category, occupation, income, location,
+        mobile, dob, gender, category, occupation, income, state, district, village,
         fatherName, fatherProfession, motherName, motherProfession,
         aadhar, pan
     } = await request.json();

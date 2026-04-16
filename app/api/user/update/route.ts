@@ -19,7 +19,7 @@ export async function PUT(request: Request) {
     const userId = session.userId as string;
 
     const { 
-        mobile, dob, gender, category, occupation, income, location,
+        mobile, dob, gender, category, occupation, income, state, district, village,
         fatherName, fatherProfession, motherName, motherProfession,
         aadhar, pan, name, caste, address, documents
     } = body;
@@ -34,7 +34,9 @@ export async function PUT(request: Request) {
         category, 
         occupation, 
         income, 
-        location,
+        state,
+        district,
+        village,
         fatherName, 
         fatherProfession, 
         motherName, 

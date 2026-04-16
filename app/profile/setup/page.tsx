@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { stateDistrictMap } from "@/lib/locationMap";
 
 interface UserProfile {
     name: string;
@@ -14,7 +15,9 @@ interface UserProfile {
     income: string;
     occupation: string;
     role: string;
-    location: string;
+    state: string;
+    district: string;
+    village: string;
     aadhar: string;
     pan: string;
     fatherName: string;
@@ -36,7 +39,7 @@ export default function ProfileSetupPage() {
 
     const [user, setUser] = useState<UserProfile>({
         name: "", email: "", mobile: "", dob: "", gender: "", category: "General",
-        income: "", occupation: "", role: "User", location: "", aadhar: "", pan: "",
+        income: "", occupation: "", role: "User", state: "", district: "", village: "", aadhar: "", pan: "",
         fatherName: "", fatherProfession: "", motherName: "", motherProfession: "",
         documents: [], appliedSchemes: [], savedSchemes: [], caste: "", address: ""
     });
@@ -52,7 +55,9 @@ export default function ProfileSetupPage() {
                 category: (authUser as any).category || "",
                 income: (authUser as any).income || "",
                 occupation: (authUser as any).occupation || "",
-                location: (authUser as any).location || "",
+                state: (authUser as any).state || "",
+                district: (authUser as any).district || "",
+                village: (authUser as any).village || "",
                 aadhar: (authUser as any).aadhar || "",
                 pan: (authUser as any).pan || "",
                 fatherName: (authUser as any).fatherName || "",
@@ -242,9 +247,29 @@ export default function ProfileSetupPage() {
                                             <input type="tel" name="mobile" value={user.mobile} onChange={handleInputChange} className="w-[94%] h-14 pl-14 pr-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-900 shadow-sm transition-all" />
                                         </div>
                                     </div>
-                                    <div>
-                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Regional Location</label>
-                                        <input name="location" value={user.location} onChange={handleInputChange} placeholder="City, State" className="w-full h-14 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-900 shadow-sm transition-all" />
+                                    <div className="grid md:grid-cols-2 gap-10">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">State</label>
+                                            <select name="state" value={user.state} onChange={(e) => setUser(prev => ({ ...prev, state: e.target.value, district: "" }))} className="w-full h-14 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-900 shadow-sm transition-all">
+                                                <option value="">Select State</option>
+                                                {Object.keys(stateDistrictMap).sort().map(state => (
+                                                    <option key={state} value={state}>{state.replace(/\b\w/g, c => c.toUpperCase())}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">District</label>
+                                            <select name="district" value={user.district} disabled={!user.state} onChange={handleInputChange} className="w-full h-14 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-900 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                                <option value="">Select District</option>
+                                                {user.state && stateDistrictMap[user.state.toLowerCase()] && Array.from(new Set(stateDistrictMap[user.state.toLowerCase()])).sort().map(dist => (
+                                                    <option key={dist} value={dist}>{dist.replace(/\b\w/g, c => c.toUpperCase())}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6">
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Village / City Area</label>
+                                        <input name="village" value={user.village} onChange={handleInputChange} placeholder="E.g. Wadhwan" className="w-full h-14 px-4 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none font-bold text-slate-900 shadow-sm transition-all" />
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Postal Address Marker</label>

@@ -147,9 +147,9 @@ export default function ProfileDashboard() {
                                 </div>
 
                                 <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Address</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</p>
                                     <div className="font-bold text-lg text-slate-900 border-l-4 border-orange-500 pl-4 py-1.5 bg-slate-50 rounded-r-xl">
-                                        {user.address || user.location || "Insufficient Data"}
+                                        {[user.village, user.district, user.state].filter(Boolean).map(s => (s as string).replace(/\b\w/g, c => c.toUpperCase())).join(', ') || user.address || "Insufficient Data"}
                                     </div>
                                 </div>
 

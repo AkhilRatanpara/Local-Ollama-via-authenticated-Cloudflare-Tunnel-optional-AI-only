@@ -1,7 +1,7 @@
 
 import { db } from "@/db";
 import { schemes } from "@/db/schemas/scheme";
-import { desc, eq, count, and, or, ilike } from "drizzle-orm";
+import { desc, eq, count, and, or, ilike, asc } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
@@ -12,6 +12,8 @@ export async function GET(req: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "6");
     const offset = (page - 1) * limit;
+
+    const sort = searchParams.get("sort") || "newest";
 
     // 1. Build where clause
     const conditions = [];
@@ -42,7 +44,10 @@ export async function GET(req: Request) {
     }
 
     // @ts-ignore
-    query = query.orderBy(desc(schemes.createdAt)).limit(limit).offset(offset);
+    query = query.orderBy(sort === "az" ? asc(schemes.title) : desc(schemes.createdAt));
+    
+    // @ts-ignore
+    query = query.limit(limit).offset(offset);
 
     const paginatedSchemes = await query;
 

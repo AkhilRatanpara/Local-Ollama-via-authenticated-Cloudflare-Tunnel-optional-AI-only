@@ -307,35 +307,61 @@ export default function SettingsPage() {
                             {activeTab === "security" && (
                                 <motion.div key="sec" initial={{opacity:0, y:15}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-15}} className="p-8 md:p-10">
                                     <div className="mb-10 pb-6 border-b border-slate-100 flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center">
+                                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
                                             <Shield className="w-6 h-6"/>
                                         </div>
                                         <div>
-                                            <h2 className="text-2xl font-bold text-slate-900 font-heading">Security Matrix</h2>
-                                            <p className="text-sm text-slate-500 font-medium">Manage access and destructive data events.</p>
+                                            <h2 className="text-2xl font-bold text-slate-900 font-heading">Security Settings</h2>
+                                            <p className="text-sm text-slate-500 font-medium">Manage your password and account security.</p>
                                         </div>
                                     </div>
                                     
                                     <div className="space-y-8 max-w-xl">
-                                        <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50 shadow-sm">
-                                            <h3 className="font-bold text-slate-900 mb-1">Rotation Lock</h3>
-                                            <p className="text-sm text-slate-500 mb-6">Modify your session credentials.</p>
-                                            <div className="space-y-4">
-                                                <input type="password" placeholder="Current Password" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-colors font-medium text-sm"/>
-                                                <input type="password" placeholder="New Password" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 outline-none focus:border-blue-500 transition-colors font-medium text-sm"/>
-                                                <button className="bg-slate-900 hover:bg-black text-white px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-colors w-full mt-2">Cycle Password Credentials</button>
+                                        {/* Password Change Section */}
+                                        <div className="p-6 border border-slate-200 rounded-2xl bg-white shadow-sm">
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="w-9 h-9 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center">
+                                                    <Lock className="w-4 h-4"/>
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-slate-900">Change Password</h3>
+                                                    <p className="text-xs text-slate-500 font-medium">Update your account password securely.</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-5">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Current Password</label>
+                                                    <input type="password" placeholder="Enter current password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all font-bold text-slate-900 text-sm"/>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">New Password</label>
+                                                    <input type="password" placeholder="Enter new password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all font-bold text-slate-900 text-sm"/>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">Confirm New Password</label>
+                                                    <input type="password" placeholder="Re-enter new password" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all font-bold text-slate-900 text-sm"/>
+                                                </div>
+                                                <button className="bg-slate-900 hover:bg-black text-white px-6 py-3.5 rounded-xl text-sm font-bold shadow-md transition-all hover:-translate-y-0.5 active:scale-[0.98] w-full mt-1">
+                                                    Update Password
+                                                </button>
                                             </div>
                                         </div>
 
-                                        <div className="p-6 border border-red-200 rounded-2xl bg-red-50 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
-                                            <div className="flex gap-4 items-center">
-                                                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center flex-shrink-0"><UserX className="w-6 h-6"/></div>
-                                                <div>
-                                                    <p className="font-bold text-red-900">Total Demolition</p>
-                                                    <p className="text-xs text-red-700 font-medium mt-1">Permanently obliterate all your profile and application traces. This cannot be reversed.</p>
-                                                </div>
+                                        {/* Danger Zone */}
+                                        <div className="p-6 border-2 border-red-200 rounded-2xl bg-red-50/50">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <AlertCircle className="w-4 h-4 text-red-500"/>
+                                                <h3 className="text-xs font-bold text-red-600 uppercase tracking-widest">Danger Zone</h3>
                                             </div>
-                                            <button className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-colors shadow-sm flex-shrink-0">Erase Data</button>
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                <div>
+                                                    <p className="font-bold text-slate-900 mb-1">Delete Account</p>
+                                                    <p className="text-xs text-slate-500 font-medium leading-relaxed">Permanently delete your account and all associated data. This action cannot be undone.</p>
+                                                </div>
+                                                <button className="px-5 py-2.5 bg-white border-2 border-red-300 hover:bg-red-600 hover:text-white hover:border-red-600 text-red-600 font-bold text-xs uppercase tracking-widest rounded-xl transition-all flex-shrink-0">
+                                                    Delete Account
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>

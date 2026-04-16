@@ -6,21 +6,9 @@ import { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 
-import { useRouter } from "next/navigation";
-
 export default function Home() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState("");
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-        router.push(`/schemes?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-        router.push('/schemes');
-    }
-  };
   const [scrollY, setScrollY] = useState(0);
   const cursorRef = useRef<HTMLDivElement>(null);
 
@@ -118,22 +106,7 @@ export default function Home() {
             Discover, filter, and access government schemes with AI-powered precision. We simplify complex bureaucratic processes into a few clicks.
           </p>
 
-          {/* Prompt / Search UI centrally focused */}
-          <form onSubmit={handleSearch} className="w-full max-w-2xl bg-white p-2 md:p-3 rounded-2xl md:rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-200 flex flex-col md:flex-row items-center gap-2 md:gap-0 focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-400 transition-all duration-300">
-            <div className="flex w-full items-center pl-4 pr-2 py-2">
-              <Search className="text-slate-400 mr-3" size={24} />
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="e.g. Loans for small business owners in Maharashtra..." 
-                className="w-full bg-transparent border-none focus:outline-none text-slate-800 placeholder-slate-400 text-lg font-medium"
-              />
-            </div>
-            <button type="submit" className="w-full md:w-auto px-8 py-3.5 bg-blue-800 text-white rounded-xl md:rounded-full font-bold text-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg flex-shrink-0 flex items-center justify-center gap-2">
-              Discover <ArrowRight size={18} />
-            </button>
-          </form>
+
 
           {/* Stats below search */}
           <div className="flex flex-wrap justify-center gap-6 md:gap-12 mt-12 text-slate-500 text-sm font-semibold uppercase tracking-wider">

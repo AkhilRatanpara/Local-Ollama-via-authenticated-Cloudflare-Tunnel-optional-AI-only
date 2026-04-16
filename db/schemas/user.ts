@@ -16,6 +16,9 @@ export const users = pgTable("users", {
   occupation: text("occupation"),
   income: text("income"), // Annual Income as string to handle formatted inputs
   location: text("location"),
+  state: text("state"),
+  district: text("district"),
+  village: text("village"),
   
   // Family Details
   fatherName: text("father_name"),

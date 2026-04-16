@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Email</label>
                             <input
                                 type="email"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="admin@sangam.gov.in"
                                 required
                             />
@@ -86,7 +86,7 @@ export default function AdminLoginPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Password</label>
                             <input
                                 type="password"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all"
                                 placeholder="••••••••"
                                 required
                             />

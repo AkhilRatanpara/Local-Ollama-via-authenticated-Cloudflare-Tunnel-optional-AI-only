@@ -4,6 +4,7 @@ import { db, schemes, users } from '@/db';
 import { AIService } from '@/lib/ai-service';
 import { eq, and, or, desc } from 'drizzle-orm';
 import { getSession } from "@/lib/auth";
+import { isLocationMatch } from "@/lib/locationMap";
 
 export async function GET(req: Request) {
     try {
@@ -34,7 +35,8 @@ export async function GET(req: Request) {
         const userOccupation = (userProfile.occupation || '').toLowerCase();
         const userGender = userProfile.gender || 'All';
         const userCategory = (userProfile.category || '').toLowerCase();
-        const userLocation = (userProfile.location || '').toLowerCase();
+        const userLocDetails = [userProfile.village, userProfile.district, userProfile.state].filter(Boolean).join(', ');
+        const userLocation = (userLocDetails || userProfile.address || '').toLowerCase();
 
         // 1. Fetch Candidates (Basic filter)
         let candidates = await db.select().from(schemes).where(eq(schemes.status, 'active'));
@@ -60,10 +62,10 @@ export async function GET(req: Request) {
                     if (!normalizedCaste.includes(userCategory)) return false;
                 }
 
-                // STATE CHECK (Central or Local State)
                 const schemeState = s.state.toLowerCase();
-                if (schemeState !== 'central') {
-                    if (!userLocation.includes(schemeState)) return false;
+                if (schemeState !== 'central' && schemeState !== 'all india') {
+                    const { match } = isLocationMatch(userLocation, schemeState);
+                    if (!match) return false;
                 }
 
                 return true; // Eligible

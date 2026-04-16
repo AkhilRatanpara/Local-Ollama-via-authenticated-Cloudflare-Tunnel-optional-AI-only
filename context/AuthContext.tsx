@@ -16,6 +16,9 @@ interface User {
     occupation?: string;
     income?: string;
     location?: string;
+    state?: string;
+    district?: string;
+    village?: string;
     caste?: string;
     address?: string;
     fatherName?: string;

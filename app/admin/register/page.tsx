@@ -83,7 +83,7 @@ export default function AdminRegisterPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Full Name</label>
                             <input
                                 type="text"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
                                 placeholder="Admin Name"
                                 required
                             />
@@ -93,7 +93,7 @@ export default function AdminRegisterPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Email</label>
                             <input
                                 type="email"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
                                 placeholder="newadmin@sangam.gov.in"
                                 required
                             />
@@ -103,7 +103,7 @@ export default function AdminRegisterPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Password</label>
                             <input
                                 type="password"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all"
                                 placeholder="Strong Password"
                                 required
                             />
@@ -113,7 +113,7 @@ export default function AdminRegisterPage() {
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Secret Key</label>
                             <input
                                 type="password"
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all ring-1 ring-purple-500/30"
+                                className="w-[90%] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:border-purple-500 outline-none transition-all ring-1 ring-purple-500/30"
                                 placeholder="Enter system secret"
                                 required
                             />

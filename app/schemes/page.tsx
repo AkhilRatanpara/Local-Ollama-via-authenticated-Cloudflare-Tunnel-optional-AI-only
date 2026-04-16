@@ -23,6 +23,8 @@ import {
     Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { isLocationMatch } from "@/lib/locationMap";
+
 
 interface Scheme {
     id: string;
@@ -34,6 +36,63 @@ interface Scheme {
     matchReason?: string;
 }
 
+const calculateMatchScoreForSort = (scheme: any, user: Record<string, any>) => {
+    if (!user) return 0;
+    let score = 0;
+    let totalWeights = 0;
+
+    if (scheme.gender && scheme.gender.toLowerCase() !== 'all' && scheme.gender.toLowerCase() !== 'any') {
+        totalWeights += 20;
+        if (scheme.gender.toLowerCase() === user.gender?.toLowerCase()) score += 20;
+    }
+    if (scheme.ageMin !== null || scheme.ageMax !== null) {
+        totalWeights += 20;
+        if (user.dob) {
+            const birthDate = new Date(user.dob);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+            const minMet = scheme.ageMin === null || age >= scheme.ageMin;
+            const maxMet = scheme.ageMax === null || age <= scheme.ageMax;
+            if (minMet && maxMet) score += 20;
+        }
+    }
+    if (scheme.caste && scheme.caste.length > 0) {
+        const schemeCastes = scheme.caste.map((c: any) => c.toLowerCase());
+        if (!schemeCastes.includes('all') && !schemeCastes.includes('any')) {
+            totalWeights += 20;
+            if (user.category && schemeCastes.includes(user.category.toLowerCase())) score += 20;
+        }
+    }
+    // 4. State/Location Match (Weight 20%)
+    if (scheme.state && scheme.state.toLowerCase() !== 'central' && scheme.state.toLowerCase() !== 'all india') {
+        totalWeights += 20;
+        const userLocDetails = [user.village, user.district, user.state].filter(Boolean).join(', ');
+        const userLoc = (userLocDetails || user.address || "").toLowerCase();
+
+        if (userLoc) {
+            const { match } = isLocationMatch(userLoc, scheme.state);
+            if (match) score += 20;
+        }
+    }
+    if (scheme.incomeLimit !== null) {
+        totalWeights += 20;
+        if (user.income) {
+            let userMaxIncome = 999999999;
+            const incStr = user.income.toLowerCase();
+            if (incStr.includes('below_1_lakh') || incStr.includes('below 1 lakh')) userMaxIncome = 100000;
+            else if (incStr.includes('1_to_2.5_lakh') || incStr.includes('1 to 2.5 lakh')) userMaxIncome = 250000;
+            else if (incStr.includes('2.5_to_5_lakh') || incStr.includes('2.5 to 5 lakh')) userMaxIncome = 500000;
+            else if (incStr.includes('above_5_lakh') || incStr.includes('above 5 lakh')) userMaxIncome = 999999999;
+            else if (!isNaN(Number(user.income))) userMaxIncome = Number(user.income);
+            if (userMaxIncome <= scheme.incomeLimit) score += 20;
+        }
+    }
+    if (totalWeights === 0) return 100;
+    return Math.round((score / totalWeights) * 100);
+};
+
 export default function SchemesPage() {
     const { user } = useAuth();
     const [schemes, setSchemes] = useState<Scheme[]>([]);
@@ -44,6 +103,7 @@ export default function SchemesPage() {
     const [recLoading, setRecLoading] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState("");
+    const [sortBy, setSortBy] = useState<"newest" | "az" | "eligibility">("newest");
     const debouncedSearch = useDebounce(searchQuery, 400);
     const schemesSectionRef = useRef<HTMLDivElement>(null);
 
@@ -59,18 +119,33 @@ export default function SchemesPage() {
             setLoading(true);
             if (debouncedSearch) setIsSearching(true);
             try {
+                const fetchLimit = sortBy === "eligibility" ? "1000" : limit.toString();
                 const query = new URLSearchParams({
                     category: activeCategory !== "All" ? activeCategory : "",
-                    page: currentPage.toString(),
-                    limit: limit.toString(),
-                    search: debouncedSearch
+                    page: sortBy === "eligibility" ? "1" : currentPage.toString(),
+                    limit: fetchLimit,
+                    search: debouncedSearch,
+                    sort: sortBy === "az" ? "az" : "newest"
                 });
                 const res = await fetch(`/api/schemes?${query.toString()}`);
                 const data = await res.json();
                 if (data.schemes) {
-                    setSchemes(data.schemes);
-                    setTotalPages(data.pagination.totalPages);
-                    setTotalSchemes(data.pagination.total);
+                    let finalSchemes = data.schemes;
+
+                    if (sortBy === "eligibility" && user) {
+                        finalSchemes = finalSchemes.map((s: any) => ({
+                            ...s,
+                            matchSortScore: calculateMatchScoreForSort(s, user)
+                        })).sort((a: any, b: any) => b.matchSortScore - a.matchSortScore);
+
+                        setTotalPages(Math.ceil(finalSchemes.length / limit));
+                        setTotalSchemes(finalSchemes.length);
+                        setSchemes(finalSchemes.slice((currentPage - 1) * limit, currentPage * limit));
+                    } else {
+                        setSchemes(finalSchemes);
+                        setTotalPages(data.pagination.totalPages);
+                        setTotalSchemes(data.pagination.total);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch schemes", error);
@@ -81,7 +156,7 @@ export default function SchemesPage() {
         };
 
         fetchSchemes();
-    }, [activeCategory, currentPage, debouncedSearch]);
+    }, [activeCategory, currentPage, debouncedSearch, sortBy, user]);
 
     // Randomize 3 schemes from the pool
     const rotateRecommendations = useCallback(() => {
@@ -223,7 +298,7 @@ export default function SchemesPage() {
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center flex flex-col items-center">
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                         className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-sm font-bold text-blue-700 mb-8 shadow-sm"
                     >
@@ -231,7 +306,7 @@ export default function SchemesPage() {
                         National Portal Database
                     </motion.div>
 
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                         className="text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.1] mb-6 text-slate-900 font-heading"
                     >
@@ -239,7 +314,7 @@ export default function SchemesPage() {
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-indigo-600">Perfect Scheme</span>
                     </motion.h1>
 
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                         className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto font-medium leading-relaxed"
                     >
@@ -296,7 +371,7 @@ export default function SchemesPage() {
                                             </div>
                                             <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-1 group-hover:underline decoration-2 underline-offset-4">{scheme.title}</h3>
                                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 mb-6">
-                                                <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><HeartPulse size={12}/> AI Insight</p>
+                                                <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><HeartPulse size={12} /> AI Insight</p>
                                                 <p className="text-sm text-slate-700 font-medium leading-relaxed">"{scheme.matchReason || "Matched extremely well based on your demographic profile."}"</p>
                                             </div>
                                             <Link href={`/schemes/${scheme.id}`} className="block w-full text-center py-3 border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white font-bold rounded-xl text-sm transition-all shadow-sm">
@@ -307,11 +382,11 @@ export default function SchemesPage() {
                                 ))}
                             </div>
                         ) : (
-                             <div className="bg-white rounded-[2rem] border border-blue-100 p-8 text-center flex flex-col justify-center items-center h-[280px]">
+                            <div className="bg-white rounded-[2rem] border border-blue-100 p-8 text-center flex flex-col justify-center items-center h-[280px]">
                                 <AlertCircle className="w-12 h-12 text-blue-300 mb-4" />
                                 <h3 className="text-xl font-bold text-slate-800">No AI Recommendations Yet</h3>
                                 <p className="text-slate-500 mb-4 max-w-sm mt-2">Complete your profile schema in settings so our engine can detect matches.</p>
-                             </div>
+                            </div>
                         )}
                     </div>
                 ) : (
@@ -324,7 +399,7 @@ export default function SchemesPage() {
                         <h2 className="text-2xl font-bold text-slate-900 tracking-tight font-heading mb-3">AI Scheme Mapping Restricted</h2>
                         <p className="text-slate-500 font-medium max-w-md mx-auto mb-8 leading-relaxed">Our advanced matchmaking engine instantly cross-references your profile deeply across 850+ national schemas. Login to see personalized scheme recommendations.</p>
                         <Link href="/login" className="bg-slate-900 text-white font-bold px-8 py-3.5 rounded-full shadow-md hover:-translate-y-0.5 hover:shadow-lg transition-all active:scale-95 flex items-center gap-2">
-                           Secure Login <ChevronRight className="w-4 h-4" />
+                            Secure Login <ChevronRight className="w-4 h-4" />
                         </Link>
                     </div>
                 )}
@@ -403,7 +478,7 @@ export default function SchemesPage() {
 
                 {/* 4. SCHEMES LIST SECTION */}
                 <div ref={schemesSectionRef} className="pb-12">
-                    <div className="flex items-center justify-between mb-8 border-b border-gray-200 pb-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b border-gray-200 gap-4">
                         <div className="flex items-center gap-4">
 
                             <div className="w-1.5 h-8 bg-gray-900 rounded-full"></div>
@@ -413,6 +488,27 @@ export default function SchemesPage() {
                                     {totalSchemes}
                                 </span>
                             </h3>
+                        </div>
+
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <span className="text-sm font-bold text-slate-500 whitespace-nowrap">Sort by:</span>
+                            <div className="relative w-full sm:w-auto">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => {
+                                        setSortBy(e.target.value as "newest" | "az" | "eligibility");
+                                        setCurrentPage(1);
+                                    }}
+                                    className="w-full sm:w-auto appearance-none bg-white border border-slate-200 text-slate-700 py-2 pl-4 pr-10 rounded-xl font-bold text-sm shadow-sm hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="newest">Newest Added</option>
+                                    <option value="az">Alphabetical (A-Z)</option>
+                                    {user && <option value="eligibility">Highest Eligibility (AI Score)</option>}
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -427,52 +523,52 @@ export default function SchemesPage() {
                                     <div className="w-3/4 h-8 bg-slate-100 rounded mb-4"></div>
                                     <div className="w-full h-16 bg-slate-50 rounded mb-8"></div>
                                     <div className="flex justify-between border-t border-slate-100 pt-6">
-                                       <div className="w-24 h-4 bg-slate-100 rounded"></div>
-                                       <div className="w-32 h-10 bg-slate-100 rounded-xl"></div>
+                                        <div className="w-24 h-4 bg-slate-100 rounded"></div>
+                                        <div className="w-32 h-10 bg-slate-100 rounded-xl"></div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
                         schemes.length === 0 ? (
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="bg-white rounded-3xl p-16 text-center border border-dashed border-slate-300 shadow-sm flex flex-col items-center">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-3xl p-16 text-center border border-dashed border-slate-300 shadow-sm flex flex-col items-center">
                                 <AlertCircle className="w-12 h-12 text-slate-300 mb-4" />
                                 <h3 className="text-xl font-bold text-slate-900 mb-2">No Schemes Found</h3>
                                 <p className="text-slate-500">We couldn't find any schemes matching "{debouncedSearch}". Try adjusting your filters or search terms.</p>
                             </motion.div>
                         ) : (
-                        <div className="grid md:grid-cols-2 gap-6 mb-12">
-                            {schemes.map((scheme) => (
-                                <div key={scheme.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-                                            {scheme.category}
-                                        </span>
-                                        <span className="bg-gray-900 text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-                                            Active
-                                        </span>
-                                    </div>
-
-                                    <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:underline decoration-2 underline-offset-4">
-                                        {scheme.title}
-                                    </h3>
-
-                                    <p className="text-gray-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
-                                        {scheme.description}
-                                    </p>
-
-                                    <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-gray-900"></span>
-                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Benefits Available</span>
+                            <div className="grid md:grid-cols-2 gap-6 mb-12">
+                                {schemes.map((scheme) => (
+                                    <div key={scheme.id} className="bg-white rounded-2xl p-8 border border-gray-200 hover:border-gray-400 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-md">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="bg-gray-100 text-gray-600 border border-gray-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                {scheme.category}
+                                            </span>
+                                            <span className="bg-gray-900 text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                Active
+                                            </span>
                                         </div>
-                                        <Link href={`/schemes/${scheme.id}`} className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-lg text-sm font-bold transition-all">
-                                            View Details
-                                        </Link>
+
+                                        <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:underline decoration-2 underline-offset-4">
+                                            {scheme.title}
+                                        </h3>
+
+                                        <p className="text-gray-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
+                                            {scheme.description}
+                                        </p>
+
+                                        <div className="mt-auto pt-6 border-t border-gray-100 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-gray-900"></span>
+                                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Benefits Available</span>
+                                            </div>
+                                            <Link href={`/schemes/${scheme.id}`} className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-lg text-sm font-bold transition-all">
+                                                View Details
+                                            </Link>
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
                         )
                     )}
 

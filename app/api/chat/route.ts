@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { schemes } from '@/db/schemas/scheme';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export const runtime = 'nodejs';
 
@@ -15,132 +15,162 @@ export async function POST(req: Request) {
 
     const lastMessage = messages[messages.length - 1].content;
     const lastMessageLower = lastMessage.toLowerCase();
-    let schemeContext = "";
 
-    // --- 1. DETECT SPECIFIC SCHEME INQUIRY ---
+    // =============================================
+    // 1. LOAD ENTIRE DATABASE INTO MEMORY
+    // =============================================
     const allActiveSchemes = await db.select().from(schemes).where(eq(schemes.status, 'active'));
-    
-    // Greedy matching: Look for scheme mentioned anywhere in message
-    const findSpecificScheme = () => {
-        // Remove conversational filler
-        const cleanMsg = lastMessageLower.replace(/hey|hi|hello|please|am i|can i|is there|any|eligible for|tell me about|what is|how to apply for|details of|scheme|yojana/g, "").trim();
-        const inputWords = cleanMsg.split(/\s+/).filter((w: string) => w.length >= 2);
 
-        if (inputWords.length === 0) return null;
-
-        for (const s of allActiveSchemes) {
-            const titleLow = s.title.toLowerCase();
-            const tagsLow = (s.tags || []).map(t => t.toLowerCase());
-            const urlLow = (s.applicationUrl || "").toLowerCase();
-            
-            // 1. Check for Acronym match (MYSY)
-            const acronym = s.title.split(/\s+/)
-                .filter(w => w.length > 0 && !["for", "the", "of", "and", "under"].includes(w.toLowerCase()))
-                .map(w => w[0]).join('').toLowerCase();
-            
-            if (inputWords.includes(acronym) || acronym === cleanMsg.replace(/\s+/g, '')) return s;
-
-            // 2. Check each input word against title and tags
-            for (const word of inputWords) {
-                // Ignore very common words if they aren't part of a short acronym
-                if (word.length < 3 && !["sc", "st", "bc"].includes(word)) continue;
-                
-                if (titleLow.includes(word) || tagsLow.includes(word) || urlLow.includes(word)) {
-                    // If word is "mysy" and it's in the title or URL, high confidence
-                    if (word === "mysy" || word === acronym) return s;
-                    
-                    // Otherwise, only match if it's a significant part of the title
-                    if (word.length > 4 && titleLow.split(/\s+/).includes(word)) return s;
-                }
-            }
-        }
-        return null;
-    };
-
-    const specificScheme = findSpecificScheme();
-
-    if (specificScheme) {
-        let eligibilityStatus = "Unknown (ask for profile details if missing)";
-        if (userProfile) {
-            let age = 0;
-            if (userProfile.dob) {
-                const birth = new Date(userProfile.dob);
-                const now = new Date();
-                age = now.getFullYear() - birth.getFullYear();
-                if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
-            }
-            const income = userProfile.income ? parseFloat(userProfile.income.toString().replace(/[^0-9.]/g, '')) : Infinity;
-            
-            const isAgeOk = (!specificScheme.ageMin || age >= specificScheme.ageMin) && (!specificScheme.ageMax || age <= specificScheme.ageMax);
-            const isIncomeOk = !specificScheme.incomeLimit || income <= specificScheme.incomeLimit;
-            const isGenderOk = !specificScheme.gender || specificScheme.gender === "All" || specificScheme.gender === userProfile.gender;
-            const isCasteOk = !specificScheme.caste || specificScheme.caste.length === 0 || (userProfile.category && specificScheme.caste.includes(userProfile.category));
-
-            if (isAgeOk && isIncomeOk && isGenderOk && isCasteOk) {
-                eligibilityStatus = "ELIGIBLE. Congratulate them and explain why.";
-            } else {
-                let reason = [];
-                if (!isAgeOk) reason.push(`age (${age})`);
-                if (!isIncomeOk) reason.push(`income (₹${income})`);
-                if (!isGenderOk) reason.push(`gender (${userProfile.gender})`);
-                if (!isCasteOk) reason.push(`category (${userProfile.category})`);
-                eligibilityStatus = `NOT ELIGIBLE because of: ${reason.join(", ")}. Explain this politely.`;
-            }
-        }
-
-        schemeContext = `CRITICAL CONTEXT: The user is explicitly asking about "${specificScheme.title}".
-DETAILS:
-- Title: ${specificScheme.title}
-- Benefits: ${specificScheme.benefits}
-- Required Documents: ${specificScheme.documentsRequired ? specificScheme.documentsRequired.join(', ') : 'Aadhar, Income/Caste Certificate'}
-- Eligibility: ${specificScheme.eligibility}
-- Official URL: ${specificScheme.applicationUrl || 'N/A'}
-- ELIGIBILITY FOR THIS USER: ${eligibilityStatus}
-
-INSTRUCTION: 
-1. Focus ONLY on "${specificScheme.title}". 
-2. Do NOT suggest other schemes unless they are complementary.
-3. If they asked if they are eligible, give the definitive answer from the 'ELIGIBILITY FOR THIS USER' field above.`;
-    } 
-    // --- 2. FALLBACK TO RECOMMENDATION FLOW ---
-    else if (userProfile && (lastMessageLower.includes("recommend") || lastMessageLower.includes("suggest") || lastMessageLower.includes("eligible"))) {
-        let age = 0;
-        if (userProfile.dob) {
-            const birth = new Date(userProfile.dob);
-            const now = new Date();
-            age = now.getFullYear() - birth.getFullYear();
-            if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
-        }
-        
-        const income = userProfile.income ? parseFloat(userProfile.income.toString().replace(/[^0-9.]/g, '')) : Infinity;
-
-        const matched = allActiveSchemes.filter(s => {
-            if (s.ageMin && age < s.ageMin) return false;
-            if (s.ageMax && age > s.ageMax) return false;
-            if (s.incomeLimit && income !== Infinity && income > s.incomeLimit) return false;
-            if (s.gender && s.gender !== "All" && s.gender !== userProfile.gender) return false;
-            if (s.caste && s.caste.length > 0 && !s.caste.includes(userProfile.category)) return false;
-            return true;
-        }).slice(0, 5);
-
-        if (matched.length > 0) {
-            schemeContext = `Based on user profile, these schemes are high-match candidates:
-${matched.map(s => `- ${s.title}: ${s.description.substring(0, 100)}...`).join('\n')}`;
-        }
+    // =============================================
+    // 2. BUILD FULL DATABASE SUMMARY (always sent)
+    // =============================================
+    const categoryMap: Record<string, string[]> = {};
+    for (const s of allActiveSchemes) {
+      if (!categoryMap[s.category]) categoryMap[s.category] = [];
+      categoryMap[s.category].push(s.title);
     }
 
-    const systemPrompt = `You are Sangam AI, a government scheme expert.
-User: ${userProfile ? `${userProfile.name} (${userProfile.occupation}, ${userProfile.category})` : "Guest"}
-${schemeContext}
+    const dbSummary = `DATABASE OVERVIEW (REAL-TIME FROM DATABASE):
+Total Active Schemes: ${allActiveSchemes.length}
+Categories: ${Object.keys(categoryMap).join(', ')}
+${Object.entries(categoryMap).map(([cat, titles]) =>
+  `\n[${cat}] (${titles.length} schemes): ${titles.join(' | ')}`
+).join('')}`;
 
-Guidelines:
-1. If schemeContext above contains "SPECIFIC SCHEME", focus strictly on providing details for that scheme.
-2. If schemeContext contains "high-match candidates", suggest them to the user politely.
-3. If no scheme context is provided, answer generally or ask for more details.
-4. IMPORTANT: NEVER share internal database IDs.
-5. Be concise and friendly.`;
+    // =============================================
+    // 3. INCOME PARSER UTILITY
+    // =============================================
+    const getIncome = (incomeStr: any) => {
+      if (!incomeStr) return Infinity;
+      const s = incomeStr.toString().toLowerCase();
+      if (s.includes('below_1_lakh') || s.includes('below 1 lakh')) return 100000;
+      if (s.includes('1_to_2.5_lakh') || s.includes('1 to 2.5 lakh')) return 250000;
+      if (s.includes('2.5_to_5_lakh') || s.includes('2.5 to 5 lakh')) return 500000;
+      if (s.includes('above_5_lakh') || s.includes('above 5 lakh')) return Infinity;
+      if (!isNaN(Number(incomeStr))) return Number(incomeStr);
+      return Infinity;
+    };
 
-    // Connect to Ollama
+    // =============================================
+    // 4. USER PROFILE CALCULATIONS
+    // =============================================
+    let age = 0;
+    let income = Infinity;
+    if (userProfile) {
+      if (userProfile.dob) {
+        const birth = new Date(userProfile.dob);
+        const now = new Date();
+        age = now.getFullYear() - birth.getFullYear();
+        if (now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate())) age--;
+      }
+      income = getIncome(userProfile.income);
+    }
+
+    // =============================================
+    // 5. SMART SEARCH — score schemes against query
+    // =============================================
+    let queryLower = lastMessageLower.replace(/[^a-z0-9\s]/g, "");
+    // Synonym expansion
+    if (/scholarship|student|study|college/.test(queryLower)) queryLower += " education";
+    if (/health|medical|hospital|doctor/.test(queryLower)) queryLower += " healthcare";
+    if (/farmer|crop|kisan|agriculture/.test(queryLower)) queryLower += " agriculture";
+    if (/startup|loan|business|enterprise/.test(queryLower)) queryLower += " business finance";
+    if (/home|house|housing|awas/.test(queryLower)) queryLower += " housing";
+    if (/pension|old age|senior|elderly/.test(queryLower)) queryLower += " social welfare";
+    if (/woman|women|girl|mahila/.test(queryLower)) queryLower += " Female";
+
+    const stopWords = new Set(["for", "with", "the", "and", "how", "what", "can", "tell", "about", "you", "have", "are", "there", "any", "please", "hey", "hi", "hello", "which", "show", "list", "give", "need", "want", "get", "find", "know", "many", "much", "does", "this", "that", "from"]);
+    const userWords = queryLower.split(/\s+/).filter((w: string) => w.length > 2 && !stopWords.has(w));
+
+    const scoredSchemes = allActiveSchemes.map(s => {
+      let score = 0;
+      const titleLow = s.title.toLowerCase();
+      const descLow = s.description.toLowerCase();
+      const catLow = s.category.toLowerCase();
+      const tagLow = s.tags ? s.tags.map((t: string) => t.toLowerCase()) : [];
+      const benefitsLow = s.benefits.toLowerCase();
+
+      for (const word of userWords) {
+        if (titleLow.includes(word)) score += 10;
+        if (catLow.includes(word)) score += 5;
+        if (tagLow.some((t: string) => t.includes(word))) score += 5;
+        if (benefitsLow.includes(word)) score += 2;
+        if (descLow.includes(word)) score += 1;
+      }
+
+      // Eligibility boost when user wants recommendations
+      if (userProfile && /recommend|suggest|eligible|match|suit/.test(lastMessageLower)) {
+        const isAgeOk = (!s.ageMin || age >= s.ageMin) && (!s.ageMax || age <= s.ageMax);
+        const isIncomeOk = !s.incomeLimit || income <= s.incomeLimit;
+        const isGenderOk = !s.gender || ["all", "any"].includes(s.gender.toLowerCase()) || s.gender.toLowerCase() === userProfile.gender?.toLowerCase();
+        const isCasteOk = !s.caste || s.caste.length === 0 || s.caste.some((c: string) => ["all", "any"].includes(c.toLowerCase())) || (userProfile.category && s.caste.map((c: string) => c.toLowerCase()).includes(userProfile.category.toLowerCase()));
+        if (isAgeOk && isIncomeOk && isGenderOk && isCasteOk) score += 3;
+      }
+
+      return { scheme: s, score };
+    });
+
+    // Top 5 relevant schemes with full detail
+    const topMatches = scoredSchemes
+      .filter(s => s.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+
+    let detailedContext = "";
+    if (topMatches.length > 0) {
+      detailedContext = "\n\nDETAILED SCHEME DATA (from database search):\n" + topMatches.map((match, index) => {
+        const s = match.scheme;
+
+        let eligLine = "";
+        if (userProfile) {
+          const isAgeOk = (!s.ageMin || age >= s.ageMin) && (!s.ageMax || age <= s.ageMax);
+          const isIncomeOk = !s.incomeLimit || income <= s.incomeLimit;
+          const isGenderOk = !s.gender || ["all", "any"].includes(s.gender.toLowerCase()) || s.gender.toLowerCase() === userProfile.gender?.toLowerCase();
+          const isCasteOk = !s.caste || s.caste.length === 0 || s.caste.some((c: string) => ["all", "any"].includes(c.toLowerCase())) || (userProfile.category && s.caste.map((c: string) => c.toLowerCase()).includes(userProfile.category.toLowerCase()));
+
+          if (isAgeOk && isIncomeOk && isGenderOk && isCasteOk) {
+            eligLine = "\n- User Eligibility: ELIGIBLE ✓";
+          } else {
+            const reasons: string[] = [];
+            if (!isAgeOk) reasons.push(`age needs ${s.ageMin ?? 'any'}-${s.ageMax ?? 'any'}, user is ${age}`);
+            if (!isIncomeOk) reasons.push(`income limit ₹${s.incomeLimit}, user exceeds`);
+            if (!isGenderOk) reasons.push(`needs ${s.gender}, user is ${userProfile.gender || 'unknown'}`);
+            if (!isCasteOk) reasons.push(`needs ${s.caste?.join('/')}, user is ${userProfile.category || 'unknown'}`);
+            eligLine = `\n- User Eligibility: NOT ELIGIBLE (${reasons.join('; ')})`;
+          }
+        }
+
+        return `[${index + 1}] ${s.title}
+- Category: ${s.category}
+- Benefits: ${s.benefits}
+- Eligibility: ${s.eligibility}
+- Documents: ${s.documentsRequired?.join(', ') || 'Aadhar, Income Certificate'}
+- Application URL: ${s.applicationUrl || 'N/A'}${eligLine}`;
+      }).join('\n\n');
+    }
+
+    // =============================================
+    // 6. SYSTEM PROMPT — database-grounded
+    // =============================================
+    const systemPrompt = `You are Sangam AI, a helpful government scheme assistant.
+${userProfile ? `User: ${userProfile.name}, Age: ${age}, Gender: ${userProfile.gender || 'N/A'}, Category: ${userProfile.category || 'N/A'}, Occupation: ${userProfile.occupation || 'N/A'}, Income: ${userProfile.income || 'N/A'}, Location: ${[userProfile.village, userProfile.district, userProfile.state].filter(Boolean).join(', ') || 'N/A'}` : "User: Guest (not logged in)"}
+
+${dbSummary}
+${detailedContext}
+
+RULES:
+1. You have FULL access to the database above. Use it to answer ALL questions accurately.
+2. When asked "how many schemes", answer with the exact total from DATABASE OVERVIEW.
+3. When asked about a category, list scheme names from that category shown above.
+4. When asked about a specific scheme, use DETAILED SCHEME DATA if available.
+5. ONLY mention schemes that exist in the database above. NEVER invent or hallucinate schemes.
+6. If a scheme is not found above, say "This scheme is not in our database."
+7. Keep answers SHORT and DIRECT. Use bullet points. No filler text.
+8. Refuse non-government-scheme questions politely.`;
+
+    // =============================================
+    // 7. SEND TO OLLAMA
+    // =============================================
     const response = await fetch('http://localhost:11434/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -185,3 +215,4 @@ Guidelines:
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
