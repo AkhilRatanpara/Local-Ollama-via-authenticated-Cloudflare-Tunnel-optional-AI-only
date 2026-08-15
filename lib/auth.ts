@@ -31,19 +31,29 @@ export async function getSession() {
   return await decrypt(session);
 }
 
-export async function updateSession(request: NextRequest) {
+/**
+ * Refreshes the session cookie expiry without returning a response.
+ * Applies the refreshed cookie onto the provided NextResponse so the
+ * middleware can continue its own role/redirect logic before returning.
+ */
+export async function updateSession(
+  request: NextRequest,
+  response: NextResponse
+): Promise<void> {
   const session = request.cookies.get("session")?.value;
   if (!session) return;
 
-  // Refresh expiration on each request so user stays logged in
   const parsed = await decrypt(session);
+  if (!parsed) return; // expired / invalid — don't refresh
+
+  // Refresh expiration on each request so the user stays logged in
   parsed.expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day from now
-  const res = NextResponse.next();
-  res.cookies.set({
+  response.cookies.set({
     name: "session",
     value: await encrypt(parsed),
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     expires: parsed.expires,
+    path: "/",
   });
-  return res;
 }

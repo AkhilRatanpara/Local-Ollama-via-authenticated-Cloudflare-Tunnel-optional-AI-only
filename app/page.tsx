@@ -43,11 +43,11 @@ export default function Home() {
     const animate = () => {
       cursorX += (mouseX - cursorX) * 0.15;
       cursorY += (mouseY - cursorY) * 0.15;
-      
+
       if (cursorRef.current) {
         cursorRef.current.style.transform = `translate(${cursorX}px, ${cursorY}px)`;
       }
-      
+
       animationFrameId = requestAnimationFrame(animate);
     };
 
@@ -64,7 +64,7 @@ export default function Home() {
     <main className="min-h-screen relative text-slate-900 selection:bg-indigo-500/30 font-sans pb-0">
 
       {/* Smooth Cursor Glow - Light Theme Adaptation */}
-      <div 
+      <div
         ref={cursorRef}
         className="pointer-events-none fixed top-0 left-0 z-0 w-[700px] h-[700px] rounded-full bg-gradient-to-br from-blue-400/30 via-teal-300/20 to-transparent blur-[160px] mix-blend-normal -ml-[350px] -mt-[350px] opacity-0 transition-opacity duration-700 hidden md:block"
         style={{ willChange: 'transform' }}
@@ -77,18 +77,18 @@ export default function Home() {
           {/* Soft Mesh Gradients */}
           <div className="absolute top-[-10%] right-[-5%] w-[50vw] h-[50vw] rounded-full bg-blue-100/60 blur-[120px] animate-pulse-glow"></div>
           <div className="absolute top-[20%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-teal-50/60 blur-[100px] animate-pulse-glow delay-700"></div>
-          
+
           {/* Subtle Grid Pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_40%,#000_70%,transparent_100%)]"></div>
         </div>
 
-        <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
-            className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center"
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+          className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center"
         >
-          
+
           {/* Top Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-slate-200 shadow-sm text-sm font-bold text-blue-700 mb-8 hover:shadow-md transition-shadow">
             <Sparkles size={16} className="text-teal-500" />
@@ -97,7 +97,7 @@ export default function Home() {
 
           {/* Headline */}
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] font-heading text-slate-900 mb-6 drop-shadow-sm">
-            Your Smart Bridge to <br className="hidden md:block"/>
+            Your Smart Bridge to <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-800 to-indigo-600">Government Benefits.</span>
           </h1>
 
@@ -137,7 +137,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10 relative">
             {/* Connecting line for desktop */}
             <div className="hidden md:block absolute top-[45px] left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-blue-100 via-indigo-200 to-teal-100 z-0"></div>
-            
+
             {[
               { step: "01", title: "Tell Us About You", desc: "Share basic details like age, occupation, and location through our secure portal.", icon: UserCheck, color: "text-blue-600", bg: "bg-blue-50" },
               { step: "02", title: "AI Precision Match", desc: "Our algorithm filters hundreds of schemes to find the exact ones you qualify for instantly.", icon: Zap, color: "text-indigo-600", bg: "bg-indigo-50" },
@@ -190,8 +190,8 @@ export default function Home() {
                 iconBg: "bg-teal-50 text-teal-700"
               }
             ].map((item, i) => (
-              <div 
-                key={i} 
+              <div
+                key={i}
                 className={`group bg-white border border-slate-200 p-10 rounded-3xl transition-all duration-500 hover:-translate-y-2 relative overflow-hidden animate-slide-up-fade ${item.accentClasses}`}
                 style={{ animationDelay: `${i * 150}ms` }}
               >
@@ -215,7 +215,7 @@ export default function Home() {
               <p className="text-slate-600 font-medium">Browse curated government schemes grouped by demographic and sector.</p>
             </div>
             <Link href="/schemes" className="mt-6 md:mt-0 group flex items-center gap-2 text-sm font-bold text-blue-800 hover:text-blue-700 transition-colors uppercase tracking-wider px-6 py-3 rounded-full border border-blue-200 hover:border-blue-300 bg-blue-50/50">
-              View All 
+              View All
               <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -228,7 +228,7 @@ export default function Home() {
             ].map((item, idx) => (
               <Link
                 href="/schemes"
-                key={idx} 
+                key={idx}
                 className={`group flex items-center p-6 bg-white rounded-2xl border border-slate-200 transition-all duration-300 hover:shadow-lg ${item.borderHover}`}
               >
                 <div className={`w-14 h-14 rounded-xl bg-slate-50 flex flex-shrink-0 items-center justify-center mr-5 transition-colors ${item.bgHover}`}>

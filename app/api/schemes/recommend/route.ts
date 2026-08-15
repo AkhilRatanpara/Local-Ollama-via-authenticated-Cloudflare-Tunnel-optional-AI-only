@@ -44,19 +44,19 @@ export async function GET(req: Request) {
         // 2. High Precision Scoring
         const rankedCandidates = candidates
             .filter(s => {
-                // STICT GENDER CHECK
+                // STRICT GENDER CHECK
                 if (s.gender !== 'All' && s.gender !== userGender) return false;
 
-                // STICT AGE CHECK
+                // STRICT AGE CHECK
                 if (userAge > 0) {
                     if (s.ageMin && userAge < s.ageMin) return false;
                     if (s.ageMax && userAge > s.ageMax) return false;
                 }
 
-                // STICT INCOME CHECK
+                // STRICT INCOME CHECK
                 if (userIncome > 0 && s.incomeLimit && userIncome > s.incomeLimit) return false;
 
-                // STICT CASTE CHECK (if scheme lists specific castes)
+                // STRICT CASTE CHECK (if scheme lists specific castes)
                 if (s.caste && s.caste.length > 0 && userCategory) {
                     const normalizedCaste = s.caste.map(c => c.toLowerCase());
                     if (!normalizedCaste.includes(userCategory)) return false;
@@ -74,16 +74,13 @@ export async function GET(req: Request) {
                 let score = 50.0; // Base score for eligibility
                 const schemeCat = s.category.toLowerCase();
                 const schemeTitle = s.title.toLowerCase();
-                const schemeDesc = s.description.toLowerCase();
 
-                // --- PRIORITY 1: Occupation-Category Alignment (+30) ---
+                // --- PRIORITY 1: Occupation-Category Alignment (+40) ---
                 if (userOccupation) {
-                    // Logic: Farmer -> Agriculture, Student -> Education, Business -> Business
-                    if (userOccupation.includes('farmer') && schemeCat.includes('agri')) score += 30;
-                    else if (userOccupation.includes('student') && schemeCat.includes('education')) score += 30;
-                    else if (userOccupation.includes('entrepreneur') && schemeCat.includes('business')) score += 30;
-                    else if (userOccupation.includes('business') && schemeCat.includes('business')) score += 30;
-                    else if (userOccupation.includes('startup') && schemeCat.includes('business')) score += 30;
+                    // Logic: Farmer -> Agriculture, Student -> Education, Business -> Business/Finance
+                    if (userOccupation.includes('farmer') && schemeCat.includes('agri')) score += 40;
+                    else if (userOccupation.includes('student') && schemeCat.includes('education')) score += 40;
+                    else if ((userOccupation.includes('entrepreneur') || userOccupation.includes('business') || userOccupation.includes('shopkeeper') || userOccupation.includes('self')) && (schemeCat.includes('business') || schemeCat.includes('finance'))) score += 40;
                     
                     // Minor boost for keyword in title/tags (+10)
                     if (schemeTitle.includes(userOccupation)) score += 10;
@@ -92,32 +89,58 @@ export async function GET(req: Request) {
 
                 // --- PRIORITY 2: Targeted Caste Relevance (+10) ---
                 if (s.caste && s.caste.length > 0 && s.caste.length < 4) {
-                    score += 10; // If it's specifically for minority/specific castes and user is eligible
+                    score += 10;
                 }
 
                 // --- PRIORITY 3: State Specificity (+5) ---
                 if (s.state.toLowerCase() !== 'central') {
-                    score += 5; // Local state schemes are usually more targeted
+                    score += 5;
                 }
 
                 const finalScore = Math.min(score, 99);
                 return { ...s, matchScore: parseFloat(finalScore.toFixed(1)) };
-            })
-            // Only suggest if score is actually boosted (don't show random general schemes as "Recommended")
-            .filter(s => s.matchScore > 50) 
+            });
+
+        // Filter and ensure at least 3 candidates are suggested (relaxing matchScore > 50 if needed)
+        let finalPool = rankedCandidates.filter(s => s.matchScore > 50);
+        if (finalPool.length < 3) {
+            const baseEligible = rankedCandidates.filter(s => s.matchScore === 50);
+            finalPool = [...finalPool, ...baseEligible];
+        }
+
+        const sortedCandidates = finalPool
             .sort((a, b) => b.matchScore - a.matchScore)
             .slice(0, 20);
 
-        if (rankedCandidates.length === 0) return NextResponse.json([]);
+        if (sortedCandidates.length === 0) return NextResponse.json([]);
 
-        // 3. AI Insights (Disabled for performance)
-        // const reasons = await AIService.generateReasons(userProfile, rankedCandidates);
-        
-        const finalResults = rankedCandidates.map(s => ({
-            ...s,
-            // matchReason: reasons[s.id] || "Your profile strongly aligns with the objectives of this specialized scheme."
-             matchReason: "Your profile strongly aligns with the objectives of this specialized scheme."
-        }));
+        const aiReasons = await AIService.generateReasons(userProfile, sortedCandidates.slice(0, 3));
+
+        const finalResults = sortedCandidates.map(s => {
+            let reason = "Your profile aligns with the baseline eligibility criteria of this scheme.";
+            const cat = s.category.toLowerCase();
+            const occ = userOccupation.toLowerCase();
+            
+            if (occ) {
+                if (occ.includes('student') && cat.includes('edu')) {
+                    reason = "Recommended specifically to support your educational goals and student status.";
+                } else if (occ.includes('farmer') && cat.includes('agri')) {
+                    reason = "Directly recommended to support agricultural productivity and farming operations.";
+                } else if ((occ.includes('business') || occ.includes('entrepreneur')) && (cat.includes('bus') || cat.includes('fin'))) {
+                    reason = "Selected to support your business venture and entrepreneurial expansion.";
+                } else if (s.title.toLowerCase().includes(occ)) {
+                    reason = `Directly matched with your stated occupation '${userProfile.occupation}'.`;
+                }
+            }
+            
+            return {
+                ...s,
+                // The first three cards use an AI-written explanation when an AI service is
+                // configured. The deterministic explanation keeps recommendations available
+                // when the AI provider is offline or reaches a free-tier limit.
+                matchReason: aiReasons[s.id] || reason
+            };
+        });
 
         return NextResponse.json(finalResults);
 

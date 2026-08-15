@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Outfit } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import FloatingChatbot from "./components/Chatbot";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/context/ToastContext";
+import SiteLayout from "./components/SiteLayout";
 
 const jakarta = Plus_Jakarta_Sans({ 
   subsets: ["latin"],
@@ -29,15 +27,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning className={`${jakarta.variable} ${outfit.variable} font-sans overflow-x-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/40 via-slate-50/20 to-white min-h-screen text-slate-900 antialiased selection:bg-indigo-500/30 selection:text-indigo-900`}>
+      <body suppressHydrationWarning className={`${jakarta.variable} ${outfit.variable} font-sans overflow-x-hidden min-h-screen antialiased selection:bg-indigo-500/30 selection:text-indigo-900`}>
         <AuthProvider>
           <ToastProvider>
-            <Navbar />
-            <div className="relative w-full overflow-x-hidden">
+            {/* SiteLayout conditionally shows Navbar/Footer/Chatbot — hidden on /admin/* */}
+            <SiteLayout>
               {children}
-            </div>
-            <Footer />
-            <FloatingChatbot />
+            </SiteLayout>
           </ToastProvider>
         </AuthProvider>
       </body>

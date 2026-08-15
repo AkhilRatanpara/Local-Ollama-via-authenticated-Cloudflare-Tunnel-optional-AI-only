@@ -1,340 +1,448 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import AdminLayout from "../../components/AdminLayout";
+import { Plus, Trash2, CheckCircle, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function AddSchemePage() {
-    const { user } = useAuth();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+/* ─── DB-aligned constants ─── */
+const CATEGORIES = ["Agriculture", "Education", "Health", "Housing", "Employment", "Women & Child", "Business", "Social Welfare", "Energy", "Technology"];
+const SCHEME_TYPES = ["Scheme", "Loan", "Subsidy"];
+const STATES = ["Central", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi", "Jammu & Kashmir", "Ladakh", "Puducherry"];
+const GENDERS = ["All", "Male", "Female", "Transgender"];
+const RESIDENCES = ["Both", "Urban", "Rural"];
+const CASTES = ["General", "OBC", "SC", "ST", "EWS"];
 
-    // Form State
-    const [formData, setFormData] = useState({
-        title: "",
-        ministry: "",
-        description: "",
-        category: "Agriculture",
-        type: "Subsidy",
-        state: "Central",
+// Predefined tag suggestions
+const TAG_SUGGESTIONS = [
+  "Agriculture", "Farmers", "Women", "Youth", "Students", "Disabled", "BPL",
+  "SC/ST", "OBC", "EWS", "Minority", "Senior Citizen", "Rural", "Urban",
+  "Self-Employment", "Startup", "MSME", "Housing", "Solar Energy", "Electric Vehicle",
+  "Health Insurance", "Scholarship", "Skill Development", "Digital India", "Swachh Bharat",
+];
 
-        benefits: "",
-        eligibility: "",
-        documentsRequired: "", // Comma separated
-        amount: "",
+/* ─── Re-usable input classes ─── */
+const CLS_INPUT = "w-full bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/40 transition-all";
+const CLS_SELECT = CLS_INPUT;
+const CLS_TEXTAREA = CLS_INPUT + " resize-none";
 
-        gender: "All",
-        ageMin: "",
-        ageMax: "",
-        incomeLimit: "",
-        caste: "SC, ST, OBC, General", // Default all
-        residence: "Both",
+/* ─── Field wrapper ─── */
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
 
-        deadline: "",
-        status: "active",
-        tags: "",
-        applicationUrl: ""
-    });
+/* ─── Bullet list input ─── */
+function BulletInput({ label, value, onChange, placeholder }: {
+  label: string; value: string[]; onChange: (v: string[]) => void; placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const add = () => {
+    const t = draft.trim();
+    if (!t || value.includes(t)) return;
+    onChange([...value, t]);
+    setDraft("");
+  };
+  return (
+    <div>
+      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">{label}</label>
+      {value.length > 0 && (
+        <ul className="space-y-1.5 mb-3">
+          {value.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 bg-[#0f1117] border border-white/10 rounded-xl px-3 py-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0 mt-1.5" />
+              <span className="text-gray-200 text-sm flex-1 leading-snug">{item}</span>
+              <button onClick={() => onChange(value.filter((_, j) => j !== i))} className="text-gray-600 hover:text-red-400 transition-colors flex-shrink-0">
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <input type="text" value={draft} onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
+          placeholder={placeholder || `Add a ${label.toLowerCase()} point...`}
+          className="flex-1 bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/40 transition-all" />
+        <button type="button" onClick={add}
+          className="px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 text-sm font-bold rounded-xl border border-indigo-500/20 transition-all flex items-center gap-1">
+          <Plus className="w-3.5 h-3.5" /> Add
+        </button>
+      </div>
+    </div>
+  );
+}
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
+/* ─── Tag picker ─── */
+function TagPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [custom, setCustom] = useState("");
+  const toggle = (tag: string) => {
+    onChange(value.includes(tag) ? value.filter(t => t !== tag) : [...value, tag]);
+  };
+  const addCustom = () => {
+    const t = custom.trim();
+    if (!t || value.includes(t)) return;
+    onChange([...value, t]);
+    setCustom("");
+  };
+  return (
+    <div>
+      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Tags</label>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {TAG_SUGGESTIONS.map(tag => (
+          <button key={tag} type="button" onClick={() => toggle(tag)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${value.includes(tag) ? "bg-indigo-600/30 text-indigo-300 border-indigo-500/40" : "bg-white/5 text-gray-500 border-white/10 hover:text-white hover:border-white/20"}`}>
+            {value.includes(tag) && "✓ "}{tag}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input type="text" value={custom} onChange={e => setCustom(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+          placeholder="Add custom tag..."
+          className="flex-1 bg-[#0f1117] border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/40 transition-all" />
+        <button type="button" onClick={addCustom}
+          className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-bold rounded-xl border border-white/10 transition-all">
+          + Add
+        </button>
+      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-3">
+          {value.map(tag => (
+            <span key={tag} className="flex items-center gap-1 px-2.5 py-1 bg-indigo-600/20 text-indigo-300 text-xs rounded-lg border border-indigo-500/20 font-medium">
+              {tag}
+              <button onClick={() => onChange(value.filter(t => t !== tag))} className="hover:text-red-400 transition-colors ml-0.5">×</button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-    const handleQuickFill = () => {
-        const samples = [
-            {
-                title: "PM-Kisan Samman Nidhi Yojana (Quick Add)",
-                ministry: "Ministry of Agriculture & Farmers Welfare",
-                description: "To provide income support to all landholding farmers' families in the country to enable them to take care of expenses related to agriculture and allied activities as well as domestic needs.",
-                category: "Agriculture",
-                type: "Subsidy",
-                state: "Central",
-                benefits: "Direct income support of ₹6,000 per year in three equal installments of ₹2,000 each.",
-                eligibility: "1. All landholding farmers' families are eligible. 2. Must have valid land records.",
-                documentsRequired: "Aadhar Card, Land Papers, Bank Account Details",
-                amount: "6000",
-                gender: "All",
-                ageMin: "18",
-                ageMax: "100",
-                incomeLimit: "",
-                caste: "SC, ST, OBC, General",
-                residence: "Both",
-                deadline: "2026-12-31",
-                status: "active",
-                tags: "farmer, income, agriculture, direct benefit",
-                applicationUrl: "https://pmkisan.gov.in/"
-            },
-            {
-                title: "National Overseas Scholarship (Quick Add)",
-                ministry: "Ministry of Social Justice and Empowerment",
-                description: "Financial assistance for students from marginalized communities to pursue Master's or Ph.D. level courses abroad.",
-                category: "Education",
-                type: "Grant",
-                state: "Central",
-                benefits: "Tuition fees, maintenance allowance, air passage, visa fees, and medical insurance.",
-                eligibility: "1. SC, ST, or Denotified Tribes. 2. Annual family income below ₹8 Lakh. 3. Age below 35 years.",
-                documentsRequired: "Caste Certificate, Income Certificate, Admission Letter, Passport",
-                amount: "2500000",
-                gender: "All",
-                ageMin: "18",
-                ageMax: "35",
-                incomeLimit: "800000",
-                caste: "SC, ST, OBC",
-                residence: "Both",
-                deadline: "2025-06-15",
-                status: "active",
-                tags: "scholarship, abroad, education, higher studies",
-                applicationUrl: "https://nosmsje.gov.in/"
-            },
-            {
-                title: "Stand-Up India Loan Scheme (Quick Add)",
-                ministry: "Ministry of Finance",
-                description: "Facilitating bank loans between ₹10 lakh and ₹1 crore to at least one Scheduled Caste (SC) or Scheduled Tribe (ST) borrower and at least one woman borrower per bank branch for setting up a greenfield enterprise.",
-                category: "Business",
-                type: "Loan",
-                state: "Central",
-                benefits: "Composite loan (inclusive of term loan and working capital) between ₹10 lakh and up to ₹100 lakh.",
-                eligibility: "1. SC/ST and/or women entrepreneurs. 2. Above 18 years of age. 3. Greenfield enterprise only.",
-                documentsRequired: "Business Plan, ID Proof, Address Proof, Category Certificate",
-                amount: "10000000",
-                gender: "All",
-                ageMin: "18",
-                ageMax: "70",
-                incomeLimit: "",
-                caste: "SC, ST",
-                residence: "Both",
-                deadline: "",
-                status: "active",
-                tags: "startup, business, loan, entrepreneurship",
-                applicationUrl: "https://www.standupmitra.in/"
-            }
-        ];
+/* ─── Section wrapper ─── */
+function Section({ title, color = "border-white/5", children }: { title: string; color?: string; children: React.ReactNode }) {
+  return (
+    <div className={`bg-[#1a1d27] border rounded-2xl p-6 space-y-5 ${color}`}>
+      <h2 className="text-sm font-bold text-white border-b border-white/5 pb-3 flex items-center gap-2">{title}</h2>
+      {children}
+    </div>
+  );
+}
 
-        const randomSample = samples[Math.floor(Math.random() * samples.length)];
-        setFormData(randomSample);
-    };
+export default function AddScheme() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        try {
-            const res = await fetch("/api/schemes/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
-            });
+  // Form state — keys match DB schema exactly
+  const [form, setForm] = useState({
+    title: "",
+    ministry: "",
+    description: "",
+    category: "Agriculture",
+    type: "Scheme",
+    state: "Central",
+    status: "active",
+    // Benefits / money
+    amount: "",
+    shortBenefits: "",
+    applicationUrl: "",
+    // Loan-specific (DB columns: interestRate, tenureMax, collateralRequired, moratoriumMonths, interestSubvention)
+    interestRate: "",
+    tenureMax: "",
+    collateralRequired: false,
+    moratoriumMonths: "",
+    interestSubvention: "",
+    // Subsidy-specific (DB columns: subsidyPercentage, subsidyMaxAmount, dbtStatus, vendorEmpanelled)
+    subsidyPercentage: "",
+    subsidyMaxAmount: "",
+    dbtStatus: false,
+    vendorEmpanelled: false,
+    // Criteria (DB columns: gender, ageMin, ageMax, incomeLimit, residence)
+    gender: "All",
+    ageMin: "",
+    ageMax: "",
+    incomeLimit: "",
+    residence: "Both",
+    // Arrays
+    benefits: [] as string[],
+    eligibility: [] as string[],
+    documentsRequired: [] as string[],
+    caste: [] as string[],
+    lendingPartners: [] as string[],
+    tags: [] as string[],
+  });
 
-            if (!res.ok) throw new Error("Failed to create scheme");
+  useEffect(() => {
+    if (!loading && (!user || user.role !== "admin")) router.push("/admin/login");
+  }, [user, loading, router]);
 
-            alert("Scheme Created Successfully!");
-            router.push("/admin/dashboard");
-        } catch (error) {
-            console.error(error);
-            alert("Error creating scheme. Check console.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
+  const set = (key: string, val: any) => setForm(f => ({ ...f, [key]: val }));
 
-    if (user?.role !== "admin") {
-        return <div className="p-10 text-center">Unauthorized</div>;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!form.title.trim()) { setError("Title is required"); return; }
+    setSubmitting(true);
+    try {
+      // Build payload — only include non-empty values, types must match schema
+      const payload: Record<string, any> = {
+        title: form.title.trim(),
+        ministry: form.ministry.trim(),
+        description: form.description.trim(),
+        category: form.category,
+        type: form.type,
+        state: form.state,
+        status: form.status,
+        gender: form.gender,
+        residence: form.residence,
+        benefits: form.benefits,
+        eligibility: form.eligibility,
+        documentsRequired: form.documentsRequired.length ? form.documentsRequired : undefined,
+        caste: form.caste.length ? form.caste : undefined,
+        tags: form.tags.length ? form.tags : undefined,
+      };
+      if (form.shortBenefits) payload.shortBenefits = form.shortBenefits.trim();
+      if (form.applicationUrl) payload.applicationUrl = form.applicationUrl.trim();
+      if (form.amount) payload.amount = parseFloat(form.amount);
+      if (form.ageMin) payload.ageMin = parseInt(form.ageMin);
+      if (form.ageMax) payload.ageMax = parseInt(form.ageMax);
+      if (form.incomeLimit) payload.incomeLimit = parseFloat(form.incomeLimit);
+
+      if (form.type === "Loan") {
+        if (form.interestRate) payload.interestRate = parseFloat(form.interestRate);
+        if (form.tenureMax) payload.tenureMax = parseInt(form.tenureMax);
+        if (form.moratoriumMonths) payload.moratoriumMonths = parseInt(form.moratoriumMonths);
+        if (form.interestSubvention) payload.interestSubvention = parseFloat(form.interestSubvention);
+        payload.collateralRequired = form.collateralRequired;
+        if (form.lendingPartners.length) payload.lendingPartners = form.lendingPartners;
+        if (form.shortBenefits) payload.shortBenefits = form.shortBenefits;
+      }
+      if (form.type === "Subsidy") {
+        if (form.subsidyPercentage) payload.subsidyPercentage = parseFloat(form.subsidyPercentage);
+        if (form.subsidyMaxAmount) payload.subsidyMaxAmount = parseFloat(form.subsidyMaxAmount);
+        payload.dbtStatus = form.dbtStatus;
+        payload.vendorEmpanelled = form.vendorEmpanelled;
+      }
+
+      const res = await fetch("/api/admin/schemes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to create scheme");
+      setSuccess(true);
+      setTimeout(() => router.push("/admin/manage"), 1800);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSubmitting(false);
     }
+  };
 
-    return (
-        <main className="min-h-screen bg-[#f3f0e9] py-12 px-4 font-sans text-gray-900">
-            <div className="max-w-5xl mx-auto">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <Link href="/admin/dashboard" className="text-sm font-bold text-gray-500 hover:text-gray-900 flex items-center gap-1 mb-2">
-                            ← Back to Dashboard
-                        </Link>
-                        <h1 className="text-3xl font-[900] tracking-tight">Create New Scheme</h1>
-                    </div>
-                    <button 
-                        type="button"
-                        onClick={handleQuickFill}
-                        className="bg-white border-2 border-dashed border-gray-300 text-gray-600 px-6 py-2.5 rounded-xl font-bold hover:border-black hover:text-black transition-all flex items-center gap-2"
-                    >
-                        <span>✨</span> Quick Fill (Random Sample)
-                    </button>
-                </div>
+  if (loading || !user || user.role !== "admin") return null;
 
-                <div className="bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
-                    <form onSubmit={handleSubmit} className="divide-y divide-gray-100">
-                        {/* 1. Basic Details */}
-                        <section className="p-8 lg:p-12">
-                            <div className="flex items-center gap-3 mb-8">
-                                <span className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg">1</span>
-                                <h2 className="text-xl font-bold">Basic Information</h2>
-                            </div>
+  return (
+    <AdminLayout
+      title="Add New Scheme"
+      subtitle="Fill in the details to publish to the public site"
+      actions={
+        <Link href="/admin/manage" className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-300 transition-all">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back
+        </Link>
+      }
+    >
+      {success && (
+        <div className="mb-6 bg-emerald-600/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <span className="text-emerald-300 font-bold text-sm">Scheme published! Redirecting...</span>
+        </div>
+      )}
+      {error && (
+        <div className="mb-6 bg-red-600/10 border border-red-500/30 rounded-2xl p-4 text-red-300 text-sm font-semibold">{error}</div>
+      )}
 
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Scheme Official Title</label>
-                                    <input
-                                        name="title"
-                                        required
-                                        value={formData.title}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-black focus:border-black outline-none transition-all"
-                                        placeholder="e.g. Pradhan Mantri Kisan Samman Nidhi"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Ministory / Department</label>
-                                    <input
-                                        name="ministry"
-                                        required
-                                        value={formData.ministry}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-black focus:border-black outline-none transition-all"
-                                        placeholder="e.g. Ministry of Agriculture"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Category</label>
-                                    <div className="relative">
-                                        <select
-                                            name="category"
-                                            required
-                                            value={formData.category}
-                                            onChange={handleChange}
-                                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-black focus:border-black outline-none transition-all appearance-none"
-                                        >
-                                            <option>Agriculture</option>
-                                            <option>Education</option>
-                                            <option>Health</option>
-                                            <option>Housing</option>
-                                            <option>Business</option>
-                                            <option>BPL/Ration</option>
-                                            <option>Pension</option>
-                                        </select>
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
-                                    </div>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Scheme Description</label>
-                                    <textarea
-                                        name="description"
-                                        required
-                                        rows={4}
-                                        value={formData.description}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-black focus:border-black outline-none transition-all resize-none"
-                                        placeholder="Briefly explain what this scheme is about..."
-                                    />
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* 2. Criteria */}
-                        <section className="p-8 lg:p-12">
-                            <div className="flex items-center gap-3 mb-8">
-                                <span className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-lg">2</span>
-                                <h2 className="text-xl font-bold">Eligibility & Benefits</h2>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Eligibility Criteria</label>
-                                    <textarea
-                                        name="eligibility"
-                                        rows={3}
-                                        value={formData.eligibility}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-none"
-                                        placeholder="- Must be a citizen of India&#10;- Age must be above 18&#10;- Land holding less than 2 hectares"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Scheme Benefits</label>
-                                    <textarea
-                                        name="benefits"
-                                        rows={3}
-                                        value={formData.benefits}
-                                        onChange={handleChange}
-                                        className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all resize-none"
-                                        placeholder="What will the beneficiary get?"
-                                    />
-                                </div>
-
-                                {/* Numeric Fields */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Monetary Benefit (₹)</label>
-                                    <input type="number" name="amount" value={formData.amount} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 outline-none" placeholder="0" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Max Annual Income Limit (₹)</label>
-                                    <input type="number" name="incomeLimit" value={formData.incomeLimit} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 outline-none" placeholder="No Limit" />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Min Age</label>
-                                        <input type="number" name="ageMin" value={formData.ageMin} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 outline-none" placeholder="18" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-bold text-gray-700 mb-2">Max Age</label>
-                                        <input type="number" name="ageMax" value={formData.ageMax} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 outline-none" placeholder="60" />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Gender Eligibility</label>
-                                    <div className="relative">
-                                        <select name="gender" value={formData.gender} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-purple-500 outline-none appearance-none">
-                                            <option value="All">All Genders</option>
-                                            <option value="Male">Male Only</option>
-                                            <option value="Female">Female Only</option>
-                                            <option value="Transgender">Transgender Only</option>
-                                        </select>
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">▼</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* 3. Meta Data */}
-                        <section className="p-8 lg:p-12 bg-gray-50">
-                            <div className="flex items-center gap-3 mb-8">
-                                <span className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-lg">3</span>
-                                <h2 className="text-xl font-bold">Additional Details</h2>
-                            </div>
-
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Application Deadline</label>
-                                    <input type="date" name="deadline" value={formData.deadline} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-orange-500 outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Official Apply Link</label>
-                                    <input name="applicationUrl" value={formData.applicationUrl} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="https://..." />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Search Tags (Comma Separated)</label>
-                                    <input name="tags" value={formData.tags} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 font-medium focus:ring-2 focus:ring-orange-500 outline-none" placeholder="e.g. loan, subsidy, farmers, rural" />
-                                </div>
-                            </div>
-
-                            <div className="mt-12 flex gap-4">
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="flex-1 bg-black text-white font-bold text-lg py-4 rounded-xl shadow-xl hover:bg-gray-900 hover:scale-[1.01] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isLoading ? "Publishing Scheme..." : "🚀 Publish Scheme Now"}
-                                </button>
-                                <Link href="/admin/dashboard" className="px-8 py-4 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
-                                    Cancel
-                                </Link>
-                            </div>
-                        </section>
-                    </form>
-                </div>
+      <form onSubmit={handleSubmit} className="space-y-5 max-w-5xl">
+        {/* ── Basic info ── */}
+        <Section title="📋 Basic Information">
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <Field label="Scheme Title" required>
+                <input required value={form.title} onChange={e => set("title", e.target.value)} placeholder="e.g., PM Kisan Samman Nidhi" className={CLS_INPUT} />
+              </Field>
             </div>
-        </main>
-    );
+            <Field label="Ministry / Department">
+              <input value={form.ministry} onChange={e => set("ministry", e.target.value)} placeholder="e.g., Ministry of Agriculture" className={CLS_INPUT} />
+            </Field>
+            <Field label="Type" required>
+              <select value={form.type} onChange={e => set("type", e.target.value)} className={CLS_SELECT}>
+                {SCHEME_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+            </Field>
+            <Field label="Category" required>
+              <select value={form.category} onChange={e => set("category", e.target.value)} className={CLS_SELECT}>
+                {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="State / Level" required>
+              <select value={form.state} onChange={e => set("state", e.target.value)} className={CLS_SELECT}>
+                {STATES.map(s => <option key={s}>{s}</option>)}
+              </select>
+            </Field>
+            <div className="md:col-span-2">
+              <Field label="Description">
+                <textarea value={form.description} onChange={e => set("description", e.target.value)} rows={4} placeholder="Full description of the scheme..." className={CLS_TEXTAREA} />
+              </Field>
+            </div>
+            <Field label="Status">
+              <select value={form.status} onChange={e => set("status", e.target.value)} className={CLS_SELECT}>
+                <option value="active">Active (Live on site)</option>
+                <option value="closed">Closed (Hidden from site)</option>
+                <option value="upcoming">Upcoming (Coming soon)</option>
+              </select>
+            </Field>
+            <Field label="Short Benefit Summary">
+              <input value={form.shortBenefits} onChange={e => set("shortBenefits", e.target.value)} placeholder="e.g., ₹6,000/yr or 30% subsidy" className={CLS_INPUT} />
+            </Field>
+            <Field label="Amount (₹, numeric)">
+              <input type="number" value={form.amount} onChange={e => set("amount", e.target.value)} placeholder="e.g., 6000" className={CLS_INPUT} />
+            </Field>
+            <Field label="Application URL">
+              <input type="url" value={form.applicationUrl} onChange={e => set("applicationUrl", e.target.value)} placeholder="https://..." className={CLS_INPUT} />
+            </Field>
+          </div>
+        </Section>
+
+        {/* ── Loan fields ── */}
+        {form.type === "Loan" && (
+          <Section title="💸 Loan Details" color="border-blue-500/20">
+            <div className="grid md:grid-cols-3 gap-4">
+              <Field label="Interest Rate (% p.a.)">
+                <input type="number" step="0.01" value={form.interestRate} onChange={e => set("interestRate", e.target.value)} placeholder="e.g., 7.5" className={CLS_INPUT} />
+              </Field>
+              <Field label="Max Tenure (months)">
+                <input type="number" value={form.tenureMax} onChange={e => set("tenureMax", e.target.value)} placeholder="e.g., 60" className={CLS_INPUT} />
+              </Field>
+              <Field label="Moratorium Period (months)">
+                <input type="number" value={form.moratoriumMonths} onChange={e => set("moratoriumMonths", e.target.value)} placeholder="e.g., 6" className={CLS_INPUT} />
+              </Field>
+              <Field label="Interest Subvention (%)">
+                <input type="number" step="0.01" value={form.interestSubvention} onChange={e => set("interestSubvention", e.target.value)} placeholder="e.g., 2" className={CLS_INPUT} />
+              </Field>
+              <Field label="Collateral Required">
+                <select value={form.collateralRequired ? "yes" : "no"} onChange={e => set("collateralRequired", e.target.value === "yes")} className={CLS_SELECT}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </Field>
+            </div>
+            <BulletInput label="Lending Partners / Banks" value={form.lendingPartners} onChange={v => set("lendingPartners", v)} placeholder="e.g., SBI, Bank of Baroda..." />
+          </Section>
+        )}
+
+        {/* ── Subsidy fields ── */}
+        {form.type === "Subsidy" && (
+          <Section title="🎯 Subsidy Details" color="border-emerald-500/20">
+            <div className="grid md:grid-cols-2 gap-4">
+              <Field label="Subsidy Percentage (%)">
+                <input type="number" step="0.1" value={form.subsidyPercentage} onChange={e => set("subsidyPercentage", e.target.value)} placeholder="e.g., 30" className={CLS_INPUT} />
+              </Field>
+              <Field label="Maximum Subsidy Amount (₹)">
+                <input type="number" value={form.subsidyMaxAmount} onChange={e => set("subsidyMaxAmount", e.target.value)} placeholder="e.g., 50000" className={CLS_INPUT} />
+              </Field>
+              <Field label="DBT (Direct Benefit Transfer)">
+                <select value={form.dbtStatus ? "yes" : "no"} onChange={e => set("dbtStatus", e.target.value === "yes")} className={CLS_SELECT}>
+                  <option value="yes">Yes — transferred directly to bank</option>
+                  <option value="no">No</option>
+                </select>
+              </Field>
+              <Field label="Vendor Empanelment Required">
+                <select value={form.vendorEmpanelled ? "yes" : "no"} onChange={e => set("vendorEmpanelled", e.target.value === "yes")} className={CLS_SELECT}>
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                </select>
+              </Field>
+            </div>
+          </Section>
+        )}
+
+        {/* ── Eligibility criteria ── */}
+        <Section title="✅ Eligibility Criteria">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Field label="Gender">
+              <select value={form.gender} onChange={e => set("gender", e.target.value)} className={CLS_SELECT}>
+                {GENDERS.map(g => <option key={g}>{g}</option>)}
+              </select>
+            </Field>
+            <Field label="Residence">
+              <select value={form.residence} onChange={e => set("residence", e.target.value)} className={CLS_SELECT}>
+                {RESIDENCES.map(r => <option key={r}>{r}</option>)}
+              </select>
+            </Field>
+            <Field label="Annual Income Limit (₹)">
+              <input type="number" value={form.incomeLimit} onChange={e => set("incomeLimit", e.target.value)} placeholder="e.g., 250000" className={CLS_INPUT} />
+            </Field>
+            <Field label="Minimum Age">
+              <input type="number" value={form.ageMin} onChange={e => set("ageMin", e.target.value)} placeholder="e.g., 18" className={CLS_INPUT} />
+            </Field>
+            <Field label="Maximum Age">
+              <input type="number" value={form.ageMax} onChange={e => set("ageMax", e.target.value)} placeholder="e.g., 60" className={CLS_INPUT} />
+            </Field>
+          </div>
+          {/* Caste selection */}
+          <div>
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Eligible Castes / Categories</label>
+            <div className="flex flex-wrap gap-2">
+              {CASTES.map(c => (
+                <button key={c} type="button"
+                  onClick={() => set("caste", form.caste.includes(c) ? form.caste.filter(x => x !== c) : [...form.caste, c])}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${form.caste.includes(c) ? "bg-indigo-600/30 text-indigo-300 border-indigo-500/40" : "bg-white/5 text-gray-500 border-white/10 hover:text-white"}`}>
+                  {form.caste.includes(c) && "✓ "}{c}
+                </button>
+              ))}
+              <button type="button" onClick={() => set("caste", form.caste.length === CASTES.length ? [] : [...CASTES])}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-white/5 text-gray-500 border-white/10 hover:text-white transition-all">
+                {form.caste.length === CASTES.length ? "Clear all" : "Select all"}
+              </button>
+            </div>
+          </div>
+          <BulletInput label="Eligibility Criteria" value={form.eligibility} onChange={v => set("eligibility", v)} placeholder="e.g., Must be a resident farmer of India..." />
+        </Section>
+
+        {/* ── Benefits & Docs ── */}
+        <Section title="🎁 Benefits & Documents">
+          <BulletInput label="Benefits" value={form.benefits} onChange={v => set("benefits", v)} placeholder="e.g., Financial assistance of ₹6,000 per year..." />
+          <BulletInput label="Documents Required" value={form.documentsRequired} onChange={v => set("documentsRequired", v)} placeholder="e.g., Aadhaar card, Land record, Bank passbook..." />
+        </Section>
+
+        {/* ── Tags ── */}
+        <Section title="🏷️ Tags">
+          <TagPicker value={form.tags} onChange={v => set("tags", v)} />
+        </Section>
+
+        {/* ── Submit ── */}
+        <div className="flex gap-4 pt-2">
+          <Link href="/admin/manage" className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm font-bold text-center transition-all border border-white/10">
+            Cancel
+          </Link>
+          <button type="submit" disabled={submitting || success}
+            className="flex-1 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold transition-all shadow-lg shadow-indigo-600/20">
+            {submitting ? "Publishing..." : success ? "Published! ✓" : "Publish Scheme"}
+          </button>
+        </div>
+      </form>
+    </AdminLayout>
+  );
 }

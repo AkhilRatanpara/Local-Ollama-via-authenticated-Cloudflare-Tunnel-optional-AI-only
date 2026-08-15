@@ -15,14 +15,14 @@ export default function AboutPage() {
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true },
     transition: { duration: 0.5, ease: "easeOut" }
-  };
+  } as const;
 
   const staggerContainer = {
     initial: { opacity: 0 },
     whileInView: { opacity: 1 },
     viewport: { once: true },
     transition: { staggerChildren: 0.15 }
-  };
+  } as const;
 
   return (
     <main className="w-full pb-0 min-h-screen text-slate-900 selection:bg-indigo-500/30 font-sans">

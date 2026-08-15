@@ -13,11 +13,26 @@ export const schemes = pgTable("schemes", {
   state: text("state").default("Central").notNull(), // "Central" or State Name
   
   // Benefits & Eligibility
-  benefits: text("benefits").notNull(), // Detailed explanation of benefits
-  eligibility: text("eligibility").notNull(), // Detailed eligibility criteria
+  benefits: text("benefits").array().default([]).notNull(), // Array of benefits bullet points
+  eligibility: text("eligibility").array().default([]).notNull(), // Array of eligibility criteria bullet points
   documentsRequired: text("documents_required").array(), // Array of document names
   amount: real("amount"), // Monetary benefit amount if applicable
+  shortBenefits: text("short_benefits"), // E.g., "₹60,000 Scholarship"
   
+  // Loan-specific details (Nullable)
+  interestRate: real("interest_rate"),
+  tenureMax: integer("tenure_max"), // in months
+  collateralRequired: boolean("collateral_required"),
+  moratoriumMonths: integer("moratorium_months"),
+  interestSubvention: real("interest_subvention"),
+  lendingPartners: text("lending_partners").array(),
+
+  // Subsidy-specific details (Nullable)
+  subsidyPercentage: real("subsidy_percentage"),
+  subsidyMaxAmount: real("subsidy_max_amount"),
+  dbtStatus: boolean("dbt_status"),
+  vendorEmpanelled: boolean("vendor_empanelled"),
+
   // Criteria (for smart filtering)
   gender: text("gender").default("All"), // All, Male, Female, Transgender
   ageMin: integer("age_min"),

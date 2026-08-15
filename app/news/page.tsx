@@ -14,7 +14,12 @@ import {
     ArrowRight,
     Loader2,
     Database,
-    AlertCircle
+    AlertCircle,
+    Scale,
+    FlaskConical,
+    Cpu,
+    RefreshCw,
+    BookOpen
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -25,6 +30,22 @@ export default function NewsPage() {
     const [activeCategory, setActiveCategory] = useState("All");
     const [dbNews, setDbNews] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const handleRefresh = async () => {
+        setIsSyncing(true);
+        try {
+            const res = await fetch("/api/news?refresh=true");
+            if (res.ok) {
+                const data = await res.json();
+                setDbNews(data);
+            }
+        } catch (err) {
+            console.error("Refresh failed:", err);
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     const staticNews = [
         {
@@ -119,17 +140,34 @@ export default function NewsPage() {
 
     const categoryList = [
         { name: "All", icon: LayoutGrid },
+        { name: "PIB", icon: Bell },
+        { name: "Breaking", icon: AlertCircle },
+        { name: "Education", icon: BookOpen },
+        { name: "Politics", icon: Scale },
+        { name: "Science", icon: FlaskConical },
+        { name: "Technology", icon: Cpu },
         { name: "Agriculture", icon: Zap },
         { name: "Business", icon: Zap },
-        { name: "Education", icon: Zap },
         { name: "Health", icon: Zap },
         { name: "Energy", icon: Zap }
     ];
 
-    const filteredNews = combinedNews.filter(news => {
+    const seenTitles = new Set();
+    const uniqueNews = combinedNews.filter(news => {
+        if (!news.title) return false;
+        const normalizedTitle = news.title.trim().toLowerCase();
+        if (seenTitles.has(normalizedTitle)) return false;
+        seenTitles.add(normalizedTitle);
+        return true;
+    });
+
+    const filteredNews = uniqueNews.filter(news => {
         const matchesSearch = news.title.toLowerCase().includes(debouncedSearch.toLowerCase()) || 
                              news.description.toLowerCase().includes(debouncedSearch.toLowerCase());
-        const matchesCategory = activeCategory === "All" || news.category === activeCategory;
+        const matchesCategory = activeCategory === "All" || 
+                                (activeCategory === "PIB" 
+                                    ? (news.category && news.category.startsWith("PIB")) 
+                                    : news.category === activeCategory);
         return matchesSearch && matchesCategory;
     });
 
@@ -214,22 +252,33 @@ export default function NewsPage() {
                             ))}
                         </div>
 
-                        <div className="relative group flex-1 max-w-md">
-                            <div className="relative bg-white border border-gray-200 rounded-xl flex items-center shadow-sm hover:border-gray-400 transition-all">
-                                <div className="ml-4 flex items-center justify-center">
-                                    {isSearching ? (
-                                        <Loader2 className="w-4 h-4 text-gray-900 animate-spin" />
-                                    ) : (
-                                        <Search className="w-4 h-4 text-gray-400" />
-                                    )}
+                        <div className="flex flex-col sm:flex-row items-center gap-4 flex-1 max-w-md w-full">
+                            <button
+                                onClick={handleRefresh}
+                                disabled={isSyncing}
+                                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 active:bg-slate-100 transition-all font-bold text-xs shadow-sm text-slate-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed w-full sm:w-auto min-w-[130px]"
+                            >
+                                <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin text-blue-600" : "text-slate-500"}`} />
+                                {isSyncing ? "Refreshing..." : "Refresh Feed"}
+                            </button>
+
+                            <div className="relative group flex-1 w-full">
+                                <div className="relative bg-white border border-gray-200 rounded-xl flex items-center shadow-sm hover:border-gray-400 transition-all">
+                                    <div className="ml-4 flex items-center justify-center">
+                                        {isSearching ? (
+                                            <Loader2 className="w-4 h-4 text-gray-900 animate-spin" />
+                                        ) : (
+                                            <Search className="w-4 h-4 text-gray-400" />
+                                        )}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search news articles..."
+                                        className="w-full bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-medium"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
                                 </div>
-                                <input
-                                    type="text"
-                                    placeholder="Search news articles..."
-                                    className="w-full bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-400 px-4 py-2.5 text-sm font-medium"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
                             </div>
                         </div>
                     </div>
@@ -264,36 +313,76 @@ export default function NewsPage() {
                                 <p className="text-slate-500 font-medium">Try adjusting your filters or checking back later.</p>
                             </motion.div>
                         ) : filteredNews.map((news) => (
-                            <div key={news.id} className="bg-white rounded-2xl p-8 border border-slate-200 hover:border-slate-300 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-[0_20px_40px_-10px_rgba(30,64,175,0.1)] hover:-translate-y-1 relative overflow-hidden">
-                                {/* Category Badge */}
-                                <div className="flex justify-between items-start mb-6">
-                                    <span className="bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
-                                        {news.category}
-                                    </span>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        <Calendar className="w-3 h-3" />
-                                        {news.date}
+                            <div key={news.id} className="bg-white rounded-2xl border border-slate-200 hover:border-slate-300 transition-all duration-300 flex flex-col group shadow-sm hover:shadow-[0_20px_40px_-10px_rgba(30,64,175,0.1)] hover:-translate-y-1 relative overflow-hidden">
+                                {/* Optional Image Header */}
+                                {news.imageUrl && (
+                                    <div className="w-full h-48 overflow-hidden relative border-b border-slate-100 bg-slate-50">
+                                        <img 
+                                            src={news.imageUrl} 
+                                            alt={news.title}
+                                            className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                                            onError={(e) => {
+                                                // If image fails to load, hide the image container
+                                                (e.currentTarget.parentElement as HTMLElement).style.display = 'none';
+                                            }}
+                                        />
                                     </div>
-                                </div>
-
-                                {/* Content */}
-                                <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:underline decoration-2 underline-offset-4 font-heading">
-                                    {news.title}
-                                </h3>
+                                )}
                                 
-                                <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
-                                    {news.description}
-                                </p>
-
-                                {/* Footer */}
-                                <div className="mt-auto pt-6 border-t border-slate-100 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">{news.icon}</span>
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Verified Update</span>
+                                <div className="p-8 flex flex-col flex-1">
+                                    {/* Category Badge */}
+                                    <div className="flex justify-between items-start mb-6">
+                                        <span className="bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider">
+                                            {news.category}
+                                        </span>
+                                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            <Calendar className="w-3 h-3" />
+                                            {news.date}
+                                        </div>
                                     </div>
-                                    <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-800 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-sm">
-                                        Read More <ArrowRight className="w-4 h-4" />
-                                    </button>
+
+                                    {/* Content */}
+                                    <h3 className="text-2xl font-bold text-slate-900 mb-3 group-hover:underline decoration-2 underline-offset-4 font-heading">
+                                        {news.title}
+                                    </h3>
+                                    
+                                    <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3 font-medium">
+                                        {news.description}
+                                    </p>
+
+                                    {/* Footer */}
+                                    <div className="mt-auto pt-6 border-t border-slate-100 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-2xl">{news.icon}</span>
+                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                                {(news.category && news.category.startsWith("PIB")) ? "PIB Update" : "Verified Update"}
+                                            </span>
+                                        </div>
+                                        {news.url && !(news.category && news.category.startsWith("PIB")) ? (
+                                            <a 
+                                                href={news.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-800 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                                            >
+                                                Read More <ArrowRight className="w-4 h-4" />
+                                            </a>
+                                        ) : news.schemeId ? (
+                                            <Link 
+                                                href={`/schemes/${news.schemeId}`}
+                                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-800 text-white hover:bg-blue-700 rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                                            >
+                                                Read More <ArrowRight className="w-4 h-4" />
+                                            </Link>
+                                        ) : (
+                                            <button 
+                                                disabled
+                                                className="flex items-center gap-2 px-6 py-2.5 bg-slate-100 text-slate-400 rounded-xl text-sm font-bold cursor-not-allowed border border-slate-200"
+                                            >
+                                                Read More <ArrowRight className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

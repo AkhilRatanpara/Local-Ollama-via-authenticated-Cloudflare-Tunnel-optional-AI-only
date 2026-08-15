@@ -9,9 +9,12 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
     const category = searchParams.get("category");
+    const type = searchParams.get("type");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "6");
-    const offset = (page - 1) * limit;
+    const offset = searchParams.has("offset")
+        ? parseInt(searchParams.get("offset")!)
+        : (page - 1) * limit;
 
     const sort = searchParams.get("sort") || "newest";
 
@@ -19,6 +22,9 @@ export async function GET(req: Request) {
     const conditions = [];
     if (category && category !== "All") {
         conditions.push(eq(schemes.category, category));
+    }
+    if (type) {
+        conditions.push(eq(schemes.type, type));
     }
     if (search) {
         conditions.push(

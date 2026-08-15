@@ -16,6 +16,7 @@ export default function MobileMenu({ isOpen, onClose, user, onProfileClick }: Mo
     const links = [
         { href: "/", label: "Home", icon: "🏠" },
         { href: "/schemes", label: "Schemes", icon: "📜" },
+        { href: "/subsidies", label: "Subsidies", icon: "🎁" },
         { href: "/loans", label: "Loans", icon: "💸" },
         { href: "/news", label: "News", icon: "newspaper" },
     ];

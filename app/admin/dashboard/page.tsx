@@ -1,210 +1,276 @@
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import AdminLayout from "../components/AdminLayout";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend, AreaChart, Area, CartesianGrid,
+} from "recharts";
+import {
+  TrendingUp, Users, FileText, Banknote, BadgePercent,
+  Newspaper, Shield, Plus, Edit3, UserCheck, ToggleLeft,
+  ChevronRight, RefreshCw
+} from "lucide-react";
+
+const TYPE_COLORS: Record<string, string> = {
+  Scheme: "#6366f1",
+  Loan: "#3b82f6",
+  Subsidy: "#10b981",
+};
+const CAT_COLORS = ["#6366f1", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"];
+
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background: "#1a1d27",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "12px",
+    color: "#fff",
+    fontSize: "12px",
+  },
+  labelStyle: { color: "#9ca3af" },
+};
+
+function StatCard({ label, value, sub, icon: Icon, color, subColor = "text-emerald-400" }: any) {
+  return (
+    <div className="bg-[#1a1d27] border border-white/5 rounded-2xl p-5 hover:border-white/10 hover:-translate-y-0.5 transition-all duration-200 group">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-2.5 rounded-xl ${color}`}>
+          <Icon className="w-4 h-4 text-white" />
+        </div>
+        <TrendingUp className="w-3.5 h-3.5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+      <p className="text-[28px] font-black text-white mb-0.5 leading-none tabular-nums">{value ?? "–"}</p>
+      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">{label}</p>
+      {sub && <p className={`text-[11px] font-semibold ${subColor}`}>{sub}</p>}
+    </div>
+  );
+}
+
+function SectionCard({ title, subtitle, children }: any) {
+  return (
+    <div className="bg-[#1a1d27] border border-white/5 rounded-2xl p-6">
+      <div className="mb-5">
+        <h3 className="text-sm font-bold text-white">{title}</h3>
+        {subtitle && <p className="text-gray-500 text-xs mt-0.5">{subtitle}</p>}
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
-    const { user, loading, logout } = useAuth();
-    const router = useRouter();
-    const [stats, setStats] = useState({
-        users: 0,
-        schemes: 0,
-        pending: 0,
-    });
-    const [loadingStats, setLoadingStats] = useState(true);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [stats, setStats] = useState<any>(null);
+  const [recentSchemes, setRecentSchemes] = useState<any[]>([]);
+  const [recentUsers, setRecentUsers] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        if (!loading) {
-            if (!user || user.role !== "admin") {
-                router.push("/admin/login");
-            } else {
-                fetchStats();
-            }
-        }
-    }, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && (!user || user.role !== "admin")) router.push("/admin/login");
+  }, [user, loading, router]);
 
-    const fetchStats = async () => {
-        try {
-            const res = await fetch("/api/admin/stats");
-            const data = await res.json();
-            if (data.stats) {
-                setStats(data.stats);
-            }
-        } catch (error) {
-            console.error("Failed to fetch dashboard stats", error);
-        } finally {
-            setLoadingStats(false);
-        }
-    };
-
-    if (loading || !user || user.role !== "admin") {
-        return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">Loading Admin Dashboard...</div>;
+  const load = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const [statsRes, schemesRes, usersRes] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/schemes"),
+        fetch("/api/admin/users"),
+      ]);
+      if (!statsRes.ok || !schemesRes.ok || !usersRes.ok) throw new Error("API error");
+      const [s, sc, u] = await Promise.all([statsRes.json(), schemesRes.json(), usersRes.json()]);
+      setStats(s);
+      setRecentSchemes((sc.schemes || []).slice(0, 5));
+      setRecentUsers((u.users || []).slice(0, 5));
+    } catch (e) {
+      console.error("Dashboard fetch error:", e);
+    } finally {
+      setRefreshing(false);
     }
+  }, []);
 
+  useEffect(() => { if (user?.role === "admin") load(); }, [user, load]);
+
+  if (loading || !user || user.role !== "admin") {
     return (
-        <main className="min-h-screen bg-[#f3f0e9] text-gray-900 font-sans flex">
-            {/* Sidebar */}
-            <aside className="fixed left-0 top-0 bottom-0 w-72 bg-[#111111] text-white hidden md:flex flex-col border-r border-white/5 z-50">
-                <div className="p-8 pb-4">
-                    <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center text-lg">🏛️</span>
-                        Sangam Admin
-                    </h1>
-                </div>
-
-                <nav className="flex-1 px-4 space-y-2 mt-4">
-                    <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-widest">Main Menu</div>
-                    <Link href="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 bg-white/10 text-white rounded-xl font-bold shadow-lg ring-1 ring-white/10">
-                        <span>📊</span> Dashboard
-                    </Link>
-                    <Link href="/admin/schemes/add" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all font-medium">
-                        <span>✨</span> Add New Scheme
-                    </Link>
-                    <Link href="/schemes" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all font-medium">
-                        <span>📑</span> View All Schemes
-                    </Link>
-                    <Link href="/loans" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl transition-all font-medium">
-                        <span>💸</span> Loans Management
-                    </Link>
-                </nav>
-
-                <div className="p-6 border-t border-white/10 bg-black/20">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold border-2 border-white/10">
-                            {user?.name?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                        <div className="overflow-hidden">
-                            <div className="font-bold text-sm truncate text-white">{user?.name}</div>
-                            <div className="text-xs text-green-400 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
-                                Online
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => logout()}
-                        className="w-full py-2.5 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
-                    >
-                        <span>🔒</span> Logout Securely
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content */}
-            <div className="flex-1 md:ml-72 p-8 lg:p-12">
-                <header className="flex justify-between items-end mb-12">
-                    <div>
-                        <h2 className="text-4xl font-[900] text-gray-900 tracking-tight leading-none mb-2">Overview</h2>
-                        <p className="text-gray-500 font-medium">Welcome back, Administrator.</p>
-                    </div>
-                    <Link href="/admin/schemes/add" className="hidden md:inline-flex items-center gap-2 bg-gray-900 hover:bg-black text-white px-6 py-3 rounded-xl font-bold transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
-                        <span>+</span> Create New Scheme
-                    </Link>
-                </header>
-
-                {/* Stats Grid */}
-                <div className="grid md:grid-cols-3 gap-8 mb-12">
-                    {/* Stat Card 1 */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl text-xl">👥</span>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Users</span>
-                            </div>
-                            <div className="text-5xl font-black text-gray-900 tracking-tight mb-2">
-                                {loadingStats ? '...' : stats.users.toLocaleString()}
-                            </div>
-                            <div className="text-sm font-medium text-green-600 bg-green-50 inline-block px-2 py-1 rounded-lg">
-                                +12% this week
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stat Card 2 */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="p-3 bg-blue-100 text-blue-600 rounded-2xl text-xl">📜</span>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Active Schemes</span>
-                            </div>
-                            <div className="text-5xl font-black text-gray-900 tracking-tight mb-2">
-                                {loadingStats ? '...' : stats.schemes.toLocaleString()}
-                            </div>
-                            <div className="text-sm font-medium text-gray-500">
-                                Across 8 Categories
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stat Card 3 */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <span className="p-3 bg-orange-100 text-orange-600 rounded-2xl text-xl">⚠️</span>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pending Review</span>
-                            </div>
-                            <div className="text-5xl font-black text-gray-900 tracking-tight mb-2">
-                                {loadingStats ? '...' : stats.pending.toLocaleString()}
-                            </div>
-                            <div className="text-sm font-medium text-orange-600 bg-orange-50 inline-block px-2 py-1 rounded-lg">
-                                Needs Attention
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Content Area */}
-                <div className="grid lg:grid-cols-2 gap-8">
-                    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-                        <div className="flex justify-between items-center mb-8">
-                            <h3 className="font-bold text-xl text-gray-900">Recent Activity</h3>
-                            <button className="text-sm font-bold text-indigo-600 hover:text-indigo-700">View Log</button>
-                        </div>
-                        <div className="space-y-6">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-4 pb-6 border-b border-gray-50 last:border-0 last:pb-0">
-                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-lg">
-                                        {i === 1 ? '📝' : i === 2 ? '👤' : '🔔'}
-                                    </div>
-                                    <div>
-                                        <div className="font-bold text-gray-900">New Scheme Draft Created</div>
-                                        <div className="text-sm text-gray-400 font-medium">By Admin User • 2 hours ago</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="bg-[#111111] text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -mr-20 -mt-20"></div>
-
-                        <h3 className="font-bold text-xl mb-4 relative z-10">Quick Actions</h3>
-                        <div className="grid grid-cols-2 gap-4 relative z-10">
-                            <button className="bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-left transition-colors">
-                                <div className="text-2xl mb-2">📢</div>
-                                <div className="font-bold text-sm">Post Update</div>
-                            </button>
-                            <button className="bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-left transition-colors">
-                                <div className="text-2xl mb-2">🔍</div>
-                                <div className="font-bold text-sm">Audit Log</div>
-                            </button>
-                            <button className="bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-left transition-colors">
-                                <div className="text-2xl mb-2">⚙️</div>
-                                <div className="font-bold text-sm">Settings</div>
-                            </button>
-                            <button className="bg-white/10 hover:bg-white/20 p-4 rounded-2xl text-left transition-colors">
-                                <div className="text-2xl mb-2">❓</div>
-                                <div className="font-bold text-sm">Support</div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
+      <div className="min-h-screen bg-[#0a0d14] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600 animate-pulse" />
+          <p className="text-gray-500 text-sm">Verifying admin access...</p>
+        </div>
+      </div>
     );
+  }
+
+  const s = stats?.stats || {};
+  const typeData = (stats?.typeBreakdown || []).map((t: any) => ({ name: t.type || "Other", value: Number(t.count) }));
+  const catData = (stats?.categoryBreakdown || []).slice(0, 9).map((c: any) => ({ name: (c.category || "Other").substring(0, 10), count: Number(c.count) }));
+  const monthlyData = (stats?.monthlySchemes || []).map((m: any) => ({ month: m.month, count: Number(m.count) }));
+
+  return (
+    <AdminLayout
+      title="Dashboard"
+      subtitle={`Welcome back, ${user.name || "Administrator"}`}
+      actions={
+        <button onClick={load} disabled={refreshing}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold text-gray-300 transition-all disabled:opacity-50">
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      }
+    >
+      <div className="space-y-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+          <StatCard label="Total Users" value={s.totalUsers} sub={`+${s.newUsersThisWeek || 0} this week`} icon={Users} color="bg-indigo-600" />
+          <StatCard label="All Schemes" value={s.totalSchemes} icon={FileText} color="bg-blue-600" />
+          <StatCard label="Live Schemes" value={s.activeSchemes} icon={FileText} color="bg-violet-600" />
+          <StatCard label="Live Loans" value={s.activeLoans} icon={Banknote} color="bg-blue-500" />
+          <StatCard label="Subsidies" value={s.activeSubsidies} icon={BadgePercent} color="bg-emerald-600" />
+          <StatCard label="Disabled" value={s.disabledSchemes} sub="Hidden from public" icon={Shield} color="bg-red-600" subColor="text-red-400" />
+          <StatCard label="News Items" value={s.totalNews} icon={Newspaper} color="bg-amber-600" />
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid lg:grid-cols-3 gap-5">
+          {/* Pie */}
+          <SectionCard title="Content by Type" subtitle="Schemes vs Loans vs Subsidies">
+            {typeData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={typeData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={4} strokeWidth={0}>
+                    {typeData.map((entry: any, i: number) => (
+                      <Cell key={i} fill={TYPE_COLORS[entry.name] || CAT_COLORS[i]} />
+                    ))}
+                  </Pie>
+                  <Tooltip {...TOOLTIP_STYLE} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: "11px", color: "#9ca3af", paddingTop: "12px" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-[200px] flex items-center justify-center text-gray-600 text-sm">No data yet</div>
+            )}
+          </SectionCard>
+
+          {/* Area */}
+          <div className="lg:col-span-2">
+            <SectionCard title="Monthly Additions" subtitle="Schemes added over the last 6 months">
+              {monthlyData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={monthlyData}>
+                    <defs>
+                      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#6366f1" stopOpacity={0.35} />
+                        <stop offset="100%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip {...TOOLTIP_STYLE} />
+                    <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} fill="url(#areaGrad)" dot={{ fill: "#6366f1", r: 3, strokeWidth: 0 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-gray-600 text-sm">No monthly data yet</div>
+              )}
+            </SectionCard>
+          </div>
+        </div>
+
+        {/* Bar chart */}
+        <SectionCard title="Schemes by Category" subtitle="Distribution across all categories">
+          {catData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={catData} barSize={24} barCategoryGap="30%">
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="name" tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip {...TOOLTIP_STYLE} />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                  {catData.map((_: any, i: number) => <Cell key={i} fill={CAT_COLORS[i % CAT_COLORS.length]} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[220px] flex items-center justify-center text-gray-600 text-sm">No category data yet</div>
+          )}
+        </SectionCard>
+
+        {/* Recent activity */}
+        <div className="grid lg:grid-cols-2 gap-5">
+          {/* Recent Schemes */}
+          <SectionCard title="Recent Schemes" subtitle="Latest added content">
+            <div className="space-y-2">
+              {recentSchemes.length === 0
+                ? <p className="text-gray-600 text-sm text-center py-6">No schemes yet</p>
+                : recentSchemes.map((s: any) => (
+                  <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/3 hover:bg-white/5 transition-all">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0
+                      ${s.type === "Loan" ? "bg-blue-600/20 text-blue-400" : s.type === "Subsidy" ? "bg-emerald-600/20 text-emerald-400" : "bg-indigo-600/20 text-indigo-400"}`}>
+                      {s.type?.[0] || "S"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-bold truncate">{s.title}</p>
+                      <p className="text-gray-500 text-[10px]">{s.category} · {s.state}</p>
+                    </div>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${s.status === "active" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+                      {s.status}
+                    </span>
+                  </div>
+                ))}
+              <Link href="/admin/manage" className="flex items-center justify-center gap-1 mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-bold py-2 transition-colors">
+                View all <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </SectionCard>
+
+          {/* Recent Users */}
+          <SectionCard title="Recent Users" subtitle="Newest registrations">
+            <div className="space-y-2">
+              {recentUsers.length === 0
+                ? <p className="text-gray-600 text-sm text-center py-6">No users yet</p>
+                : recentUsers.map((u: any) => (
+                  <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/3 hover:bg-white/5 transition-all">
+                    <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/20 flex items-center justify-center text-indigo-300 text-xs font-bold flex-shrink-0">
+                      {(u.name || u.email)?.[0]?.toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-bold truncate">{u.name || "Unnamed"}</p>
+                      <p className="text-gray-500 text-[10px] truncate">{u.email}</p>
+                    </div>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold capitalize ${u.role === "admin" ? "bg-rose-500/15 text-rose-400" : "bg-white/5 text-gray-500"}`}>
+                      {u.role || "user"}
+                    </span>
+                  </div>
+                ))}
+              <Link href="/admin/users" className="flex items-center justify-center gap-1 mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-bold py-2 transition-colors">
+                View all <ChevronRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </SectionCard>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Add Scheme", href: "/admin/schemes/add", icon: Plus, cls: "text-indigo-400 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20" },
+            { label: "Manage Content", href: "/admin/manage", icon: Edit3, cls: "text-blue-400 bg-blue-600/10 border-blue-500/20 hover:bg-blue-600/20" },
+            { label: "Manage Users", href: "/admin/users", icon: UserCheck, cls: "text-emerald-400 bg-emerald-600/10 border-emerald-500/20 hover:bg-emerald-600/20" },
+            { label: "Feature Controls", href: "/admin/feature-controls", icon: ToggleLeft, cls: "text-amber-400 bg-amber-600/10 border-amber-500/20 hover:bg-amber-600/20" },
+          ].map(({ label, href, icon: Icon, cls }) => (
+            <Link key={href} href={href}
+              className={`flex flex-col items-center gap-3 p-5 rounded-xl border transition-all text-sm font-bold text-center ${cls}`}>
+              <Icon className="w-5 h-5" />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </AdminLayout>
+  );
 }

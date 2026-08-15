@@ -3,8 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { GraduationCap, ArrowRight, Twitter, Linkedin, Github } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function Footer() {
+    const pathname = usePathname();
+    if (pathname === "/profile/setup") return null;
+
     return (
         <footer className="w-full bg-slate-50 border-t border-slate-200 overflow-hidden relative text-slate-600">
             {/* Background Effects */}
@@ -14,19 +18,15 @@ export default function Footer() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10 relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
                     <div className="col-span-1 md:col-span-1">
-                        <Link href="/" className="flex items-center gap-3 group relative inline-flex mb-6">
-                            <div className="relative w-10 h-10 flex items-center justify-center transition-transform duration-500 ease-out group-hover:scale-105">
-                                <div className="absolute inset-0 bg-blue-100 rounded-xl group-hover:bg-blue-200 transition-colors duration-300"></div>
-                                <div className="relative flex items-center justify-center overflow-hidden">
-                                    <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[24px] h-[24px]">
-                                        <path d="M6 26C6 14.9543 14.9543 6 26 6" stroke="#1e40af" strokeWidth="4" strokeLinecap="round"/>
-                                        <path d="M26 26C14.9543 26 6 17.0457 6 6" stroke="#14b8a6" strokeWidth="4" strokeLinecap="round"/>
-                                    </svg>
-                                </div>
-                            </div>
-                            <span className="font-heading font-black text-2xl tracking-tighter text-slate-900 group-hover:text-blue-900 transition-colors">
-                                Sangam
-                            </span>
+                        <Link href="/" className="h-16 w-56 relative flex items-center justify-start mb-6">
+                            <video
+                                src="/animated-logo.mp4"
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                className="absolute h-[180%] w-auto max-w-none object-contain select-none pointer-events-none"
+                            />
                         </Link>
                         <p className="text-sm leading-relaxed mb-6 font-medium text-slate-500">
                             Democratizing access to government welfare with state-of-the-art AI-powered discovery and matching.

@@ -24,18 +24,8 @@ export async function POST(req: Request) {
     // =============================================
     // 2. BUILD FULL DATABASE SUMMARY (always sent)
     // =============================================
-    const categoryMap: Record<string, string[]> = {};
-    for (const s of allActiveSchemes) {
-      if (!categoryMap[s.category]) categoryMap[s.category] = [];
-      categoryMap[s.category].push(s.title);
-    }
-
-    const dbSummary = `DATABASE OVERVIEW (REAL-TIME FROM DATABASE):
-Total Active Schemes: ${allActiveSchemes.length}
-Categories: ${Object.keys(categoryMap).join(', ')}
-${Object.entries(categoryMap).map(([cat, titles]) =>
-  `\n[${cat}] (${titles.length} schemes): ${titles.join(' | ')}`
-).join('')}`;
+    const categories = [...new Set(allActiveSchemes.map((scheme) => scheme.category))];
+    const dbSummary = `Database: ${allActiveSchemes.length} active schemes. Categories: ${categories.join(', ')}.`;
 
     // =============================================
     // 3. INCOME PARSER UTILITY
@@ -88,7 +78,7 @@ ${Object.entries(categoryMap).map(([cat, titles]) =>
       const descLow = s.description.toLowerCase();
       const catLow = s.category.toLowerCase();
       const tagLow = s.tags ? s.tags.map((t: string) => t.toLowerCase()) : [];
-      const benefitsLow = s.benefits.toLowerCase();
+      const benefitsLow = s.benefits ? s.benefits.join(" ").toLowerCase() : "";
 
       for (const word of userWords) {
         if (titleLow.includes(word)) score += 10;
@@ -110,11 +100,11 @@ ${Object.entries(categoryMap).map(([cat, titles]) =>
       return { scheme: s, score };
     });
 
-    // Top 5 relevant schemes with full detail
+    // Restrict AI context to the three most relevant database matches.
     const topMatches = scoredSchemes
       .filter(s => s.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 5);
+      .slice(0, 3);
 
     let detailedContext = "";
     if (topMatches.length > 0) {
@@ -142,9 +132,8 @@ ${Object.entries(categoryMap).map(([cat, titles]) =>
 
         return `[${index + 1}] ${s.title}
 - Category: ${s.category}
-- Benefits: ${s.benefits}
-- Eligibility: ${s.eligibility}
-- Documents: ${s.documentsRequired?.join(', ') || 'Aadhar, Income Certificate'}
+- Benefits: ${(s.benefits || []).slice(0, 3).join('; ')}
+- Eligibility: ${(s.eligibility || []).slice(0, 3).join('; ')}
 - Application URL: ${s.applicationUrl || 'N/A'}${eligLine}`;
       }).join('\n\n');
     }
@@ -159,60 +148,111 @@ ${dbSummary}
 ${detailedContext}
 
 RULES:
-1. You have FULL access to the database above. Use it to answer ALL questions accurately.
+1. Use only the supplied database summary and matching schemes.
 2. When asked "how many schemes", answer with the exact total from DATABASE OVERVIEW.
-3. When asked about a category, list scheme names from that category shown above.
-4. When asked about a specific scheme, use DETAILED SCHEME DATA if available.
+3. When asked about a category, recommend the matching schemes shown above.
+4. When asked about a specific scheme, use matching scheme data if available.
 5. ONLY mention schemes that exist in the database above. NEVER invent or hallucinate schemes.
 6. If a scheme is not found above, say "This scheme is not in our database."
 7. Keep answers SHORT and DIRECT. Use bullet points. No filler text.
 8. Refuse non-government-scheme questions politely.`;
 
     // =============================================
-    // 7. SEND TO OLLAMA
+    // 7. SEND TO OLLAMA (WITH DB FALLBACK)
     // =============================================
-    const response = await fetch('http://localhost:11434/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'mistral',
-        messages: [{ role: 'system', content: systemPrompt }, ...messages],
-        stream: true,
-      }),
-    });
+    try {
+      if (process.env.AI_ENABLED === 'false') {
+        throw new Error('AI service explicitly disabled');
+      }
 
-    if (!response.ok) throw new Error(`Ollama API error: ${response.statusText}`);
+      const rawUrl = process.env.OLLAMA_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:11434/api' : undefined);
+      if (!rawUrl) {
+        throw new Error('OLLAMA_API_URL is not configured');
+      }
 
-    const stream = new ReadableStream({
-      async start(controller) {
-        const reader = response.body?.getReader();
-        if (!reader) { controller.close(); return; }
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = new TextDecoder().decode(value);
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-              if (!line.trim()) continue;
-              try {
-                const json = JSON.parse(line);
-                if (json.message?.content) {
-                  controller.enqueue(new TextEncoder().encode(json.message.content));
+      const ollamaBaseUrl = rawUrl.replace(/\/$/, '');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+      if (process.env.OLLAMA_API_KEY) {
+        headers['Authorization'] = `Bearer ${process.env.OLLAMA_API_KEY}`;
+      } else if (process.env.OLLAMA_TUNNEL_SECRET) {
+        headers['Authorization'] = `Bearer ${process.env.OLLAMA_TUNNEL_SECRET}`;
+        headers['X-Ollama-Secret'] = process.env.OLLAMA_TUNNEL_SECRET;
+      }
+
+      if (process.env.CF_ACCESS_CLIENT_ID && process.env.CF_ACCESS_CLIENT_SECRET) {
+        headers['CF-Access-Client-Id'] = process.env.CF_ACCESS_CLIENT_ID;
+        headers['CF-Access-Client-Secret'] = process.env.CF_ACCESS_CLIENT_SECRET;
+      }
+
+      const ollamaUrl = `${ollamaBaseUrl}/chat`;
+      const recentMessages = messages.slice(-6).map((message: { role: string; content: unknown }) => ({
+        role: message.role,
+        content: String(message.content || '').slice(-800),
+      }));
+      const response = await fetch(ollamaUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: process.env.AI_MODEL || 'mistral',
+          messages: [{ role: 'system', content: systemPrompt }, ...recentMessages],
+          stream: true,
+        }),
+        signal: AbortSignal.timeout(45_000),
+      });
+
+      if (response.ok && response.body) {
+        const stream = new ReadableStream({
+          async start(controller) {
+            const reader = response.body?.getReader();
+            if (!reader) { controller.close(); return; }
+            try {
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                  if (!line.trim()) continue;
+                  try {
+                    const json = JSON.parse(line);
+                    if (json.message?.content) {
+                      controller.enqueue(new TextEncoder().encode(json.message.content));
+                    }
+                  } catch (e) {}
                 }
-              } catch (e) {}
+              }
+            } finally {
+              controller.close();
             }
-          }
-        } finally {
-          controller.close();
-        }
-      },
-    });
+          },
+        });
 
-    return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+      }
+    } catch (aiErr) {
+      console.warn("AI Engine unreachable or skipped. Falling back to database response.");
+    }
+
+    // Fallback response when AI is offline or skipped
+    let replyText = "";
+    if (topMatches.length > 0) {
+      replyText = `Based on your query, here are the top matching government schemes from our database:\n\n` +
+        topMatches.map((match, i) => {
+          const s = match.scheme;
+          const benefits = Array.isArray(s.benefits) ? s.benefits.join(', ') : (s.shortBenefits || s.description);
+          const eligibility = Array.isArray(s.eligibility) ? s.eligibility.join(', ') : 'Check eligibility on portal';
+          return `**${i + 1}. ${s.title}** (${s.category})\n• **Benefits:** ${benefits}\n• **Eligibility:** ${eligibility}\n• **Official Portal:** ${s.applicationUrl || 'Available on official portal'}`;
+        }).join('\n\n');
+    } else {
+      replyText = `Namaste! I searched our database for "${lastMessage}", but didn't find specific matches. Please explore all active schemes directly on our Schemes tab or filter by category.`;
+    }
+
+    return new Response(replyText, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
   } catch (error: any) {
     console.error('AI Chat Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
 

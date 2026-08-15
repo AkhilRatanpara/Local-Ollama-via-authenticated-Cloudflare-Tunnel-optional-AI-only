@@ -334,13 +334,134 @@ async function seed() {
         const usersList = await db.query.users.findMany({ limit: 1 });
         const adminId = usersList.length > 0 ? usersList[0].id : null;
 
-        const formatted = allData.map(s => ({
-            ...s,
-            createdBy: adminId,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            applicationsCount: 0
-        }));
+        const formatted = allData.map(s => {
+            let extra: any = {};
+            
+            // Assign default short benefits based on type/amount
+            if (s.type === "Scholarship") {
+                extra.shortBenefits = "₹50,000 Scholarship/yr";
+            } else if (s.type === "Subsidies" || s.type === "Subsidy" || s.type === "Housing Subsidy") {
+                extra.shortBenefits = s.amount ? `₹${s.amount.toLocaleString('en-IN')} Subsidy` : "Govt. Subsidy";
+            } else {
+                extra.shortBenefits = s.amount ? `₹${s.amount.toLocaleString('en-IN')} Support` : "Govt. Sponsored";
+            }
+
+            // Make category-specific bullet points for array fields
+            const benefitsArray: string[] = [];
+            const eligibilityArray: string[] = [];
+
+            if (s.category === "Education") {
+                benefitsArray.push("Full tuition fee waiver or academic scholarship grant.");
+                benefitsArray.push("Monthly maintenance stipend for books, materials, and living costs.");
+                benefitsArray.push("Additional allowances for disabled students (if applicable).");
+                
+                eligibilityArray.push("Must be an active student enrolled in a registered institution.");
+                eligibilityArray.push("Minimum academic score of 60% in the qualifying examination.");
+                eligibilityArray.push(`Annual family income must be under ₹${s.incomeLimit ? s.incomeLimit.toLocaleString('en-IN') : '6,00,000'}.`);
+            } else if (s.category === "Healthcare") {
+                benefitsArray.push("Free diagnostic services and clinical treatments at empanelled centers.");
+                benefitsArray.push("Coverage for secondary and tertiary hospitalization expenses.");
+                benefitsArray.push("Subsidized post-hospitalization medication and follow-ups.");
+
+                eligibilityArray.push("Targeted at below-poverty-line (BPL) and marginalized households.");
+                eligibilityArray.push("Requires registration under the State Health Insurance registry.");
+                eligibilityArray.push("Open to all age groups and demographics meeting income limits.");
+            } else if (s.category === "Agriculture") {
+                benefitsArray.push("Direct financial assistance transferred directly to bank accounts.");
+                benefitsArray.push("Subsidies on seeds, fertilizers, and agricultural equipment.");
+                benefitsArray.push("Crop insurance coverage against natural disasters or failure.");
+
+                eligibilityArray.push("Must own cultivable agricultural land under their name.");
+                eligibilityArray.push("Small and marginal farmers holding less than 2 hectares of land.");
+                eligibilityArray.push("Requires Aadhaar-linked land record verification.");
+            } else if (s.category === "Business" || s.category === "Entrepreneurship") {
+                benefitsArray.push("Collateral-free low-interest working capital and term loans.");
+                benefitsArray.push("Interest subvention benefits for prompt repayment cycles.");
+                benefitsArray.push("Capital subsidy on project establishment costs.");
+
+                eligibilityArray.push("Artisans, micro-business owners, startups, or SC/ST/Women entrepreneurs.");
+                eligibilityArray.push("Requires a viable business project report and proof of activity.");
+                eligibilityArray.push("Age limit: 18 to 65 years at the time of application.");
+            } else if (s.category === "Housing") {
+                benefitsArray.push("Financial grant for building or renovating a pucca house.");
+                benefitsArray.push("Interest subsidy on housing bank loans under credit-linked schemes.");
+                benefitsArray.push("Sanitation grant for building household toilets.");
+
+                eligibilityArray.push("Must not own any pucca house in India under any family member's name.");
+                eligibilityArray.push("Belongs to Economically Weaker Section (EWS) or Low Income Group (LIG).");
+                eligibilityArray.push("Geographic target: Eligible rural and urban municipal areas.");
+            } else {
+                // Fallback splitting of original string
+                if (typeof s.benefits === "string") {
+                    benefitsArray.push(...s.benefits.split('.').map(b => b.trim()).filter(Boolean));
+                } else {
+                    benefitsArray.push("Government financial aid and welfare benefits.");
+                }
+                if (typeof s.eligibility === "string") {
+                    eligibilityArray.push(...s.eligibility.split('.').map(e => e.trim()).filter(Boolean));
+                } else {
+                    eligibilityArray.push("Demographic eligibility matching profile details.");
+                }
+            }
+
+            extra.benefits = benefitsArray;
+            extra.eligibility = eligibilityArray;
+
+            // Custom Loan Reference: PM Mudra Yojana
+            if (s.title === "PM Mudra Yojana") {
+                extra = {
+                    type: "Loan",
+                    shortBenefits: "Collateral-Free Loan up to ₹10 Lakhs",
+                    interestRate: 8.5,
+                    tenureMax: 60, // 5 years (60 months)
+                    collateralRequired: false,
+                    lendingPartners: ["State Bank of India", "HDFC Bank", "ICICI Bank", "Punjab National Bank"],
+                    interestSubvention: 2.0,
+                    moratoriumMonths: 6,
+                    benefits: [
+                        "Collateral-free working capital and term loans up to ₹10 Lakhs.",
+                        "No processing fee for Shishu category loans (up to ₹50,000).",
+                        "Flexible repayment cycles tailored to business cashflows."
+                    ],
+                    eligibility: [
+                        "Indian citizens owning non-corporate, non-farm micro enterprises.",
+                        "Business must be engaged in manufacturing, trading, or services.",
+                        "Requires business project report and active registration proof."
+                    ]
+                };
+            }
+
+            // Custom Subsidy Reference: PM Krishi Sinchai Yojana
+            if (s.title === "PM Krishi Sinchai Yojana") {
+                extra = {
+                    type: "Subsidy",
+                    shortBenefits: "Up to 55% Drip Irrigation Subsidy",
+                    subsidyPercentage: 55.0,
+                    subsidyMaxAmount: 50000,
+                    dbtStatus: true,
+                    vendorEmpanelled: true,
+                    benefits: [
+                        "Up to 55% subsidy on micro-irrigation systems for small/marginal farmers.",
+                        "Up to 45% subsidy on systems for other general farmers.",
+                        "Direct Benefit Transfer (DBT) payment to Aadhaar-seeded bank accounts."
+                    ],
+                    eligibility: [
+                        "Farmers owning cultivable land with access to water sources.",
+                        "Must purchase systems from empanelled solar and irrigation vendors.",
+                        "Requires copy of land registry, Aadhaar, and electricity bills."
+                    ]
+                };
+            }
+
+            return {
+                ...s,
+                ...extra,
+                createdBy: adminId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                applicationsCount: 0
+            };
+        });
 
         await db.delete(schemes);
         const result = await db.insert(schemes).values(formatted as any).returning();

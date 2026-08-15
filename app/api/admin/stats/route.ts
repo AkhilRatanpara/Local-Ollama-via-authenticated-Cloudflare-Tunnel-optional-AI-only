@@ -1,53 +1,80 @@
 import { db } from "@/db";
-import { users } from "@/db/schemas/user";
 import { schemes } from "@/db/schemas/scheme";
-import { getSession } from "@/lib/auth";
+import { users } from "@/db/schemas/user";
+import { news } from "@/db/schemas/news";
+import { count, eq, and, gte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { count, eq } from "drizzle-orm"; // Ensure count is available or use raw sql if needed, but for now length is fine for small scale or sql`count(*)`
+import { requireAdmin } from "@/lib/admin-auth";
 
-export async function GET(req: Request) {
+export async function GET() {
+  const admin = await requireAdmin();
+  if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
-    const session = await getSession();
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const sixMonthsAgo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
 
-    if (!session || session.role !== "admin") {
-      return NextResponse.json(
-        { message: "Unauthorized" },
-        { status: 403 }
-      );
-    }
+    const [
+      totalUsersRes,
+      newUsersRes,
+      totalSchemesRes,
+      activeLoansRes,
+      activeSubsidiesRes,
+      activeSchemesRes,
+      disabledRes,
+      totalNewsRes,
+    ] = await Promise.all([
+      db.select({ value: count() }).from(users),
+      db.select({ value: count() }).from(users).where(gte(users.createdAt, sevenDaysAgo)),
+      db.select({ value: count() }).from(schemes),
+      db.select({ value: count() }).from(schemes).where(and(eq(schemes.type, "Loan"), eq(schemes.status, "active"))),
+      db.select({ value: count() }).from(schemes).where(and(eq(schemes.type, "Subsidy"), eq(schemes.status, "active"))),
+      db.select({ value: count() }).from(schemes).where(and(eq(schemes.type, "Scheme"), eq(schemes.status, "active"))),
+      db.select({ value: count() }).from(schemes).where(eq(schemes.status, "closed")),
+      db.select({ value: count() }).from(news),
+    ]);
 
-    // Fetch Stats
-    // Note: Drizzle count() usage might vary by version/driver, 
-    // for simplicity in this rapid dev env we can use array length or SQL raw
-    // Let's try simple array selection for now as it's guaranteed to work without complex sql imports
-    
-    // 1. Total Users
-    const allUsers = await db.select({ id: users.id }).from(users);
-    const userCount = allUsers.length;
+    // Breakdown by category
+    const categoryBreakdown = await db
+      .select({ category: schemes.category, count: count() })
+      .from(schemes)
+      .groupBy(schemes.category)
+      .orderBy(sql`count(*) desc`);
 
-    // 2. Active Schemes
-    const activeSchemes = await db.select({ id: schemes.id }).from(schemes).where(eq(schemes.status, "active"));
-    const schemeCount = activeSchemes.length;
+    // Breakdown by type
+    const typeBreakdown = await db
+      .select({ type: schemes.type, count: count() })
+      .from(schemes)
+      .groupBy(schemes.type);
 
-    // 3. Pending/Inactive (Using closed/upcoming schemes as proxy for now)
-    const inactiveSchemes = await db.select({ id: schemes.id }).from(schemes).where(eq(schemes.status, "closed"));
-    const pendingCount = inactiveSchemes.length; // Or we can use this for something else
+    // Monthly additions (last 6 months)
+    const monthlySchemes = await db
+      .select({
+        month: sql<string>`to_char(created_at, 'Mon')`,
+        count: count(),
+      })
+      .from(schemes)
+      .where(gte(schemes.createdAt, sixMonthsAgo))
+      .groupBy(sql`to_char(created_at, 'Mon')`)
+      .orderBy(sql`min(created_at)`);
 
-    return NextResponse.json(
-      { 
-        stats: {
-            users: userCount,
-            schemes: schemeCount,
-            pending: pendingCount
-        }
+    return NextResponse.json({
+      stats: {
+        totalUsers: Number(totalUsersRes[0].value),
+        newUsersThisWeek: Number(newUsersRes[0].value),
+        totalSchemes: Number(totalSchemesRes[0].value),
+        activeLoans: Number(activeLoansRes[0].value),
+        activeSubsidies: Number(activeSubsidiesRes[0].value),
+        activeSchemes: Number(activeSchemesRes[0].value),
+        disabledSchemes: Number(disabledRes[0].value),
+        totalNews: Number(totalNewsRes[0].value),
       },
-      { status: 200 }
-    );
+      categoryBreakdown: categoryBreakdown.map(c => ({ category: c.category, count: Number(c.count) })),
+      typeBreakdown: typeBreakdown.map(t => ({ type: t.type, count: Number(t.count) })),
+      monthlySchemes: monthlySchemes.map(m => ({ month: m.month, count: Number(m.count) })),
+    });
   } catch (error) {
-    console.error("Error fetching admin stats:", error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 }
-    );
+    console.error("Admin stats error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

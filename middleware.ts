@@ -3,12 +3,13 @@ import type { NextRequest } from "next/server";
 import { updateSession, decrypt } from "@/lib/auth";
 
 export async function middleware(request: NextRequest) {
-  // Update session expiration if it exists
-  const response = await updateSession(request);
-  if (response) return response;
-
   const session = request.cookies.get("session")?.value;
   const { pathname } = request.nextUrl;
+
+  // Build the default "pass-through" response; session refresh will mutate its cookies.
+  const defaultResponse = NextResponse.next();
+  // Refresh session expiry on every request (mutates defaultResponse cookies)
+  await updateSession(request, defaultResponse);
 
   // Protected Routes (Add more as needed)
   const protectedRoutes = ["/profile", "/settings"];
@@ -66,7 +67,8 @@ export async function middleware(request: NextRequest) {
   // we rely on the frontend redirect logic or a simpler check if possible.
   // For now, we allow access to /profile/setup if authenticated.
 
-  return NextResponse.next();
+  // Return defaultResponse (carries the refreshed session cookie if applicable)
+  return defaultResponse;
 }
 
 export const config = {
