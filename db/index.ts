@@ -9,7 +9,7 @@ import * as settingsSchema from './schemas/settings';
 
 dotenv.config({ path: ".env" });
 
-const connectionString = process.env.SUPABASE_DB_LINK || process.env.DATABASE_URL;
+const connectionString = process.env.DATABASE_URL || process.env.SUPABASE_DB_LINK;
 
 if (!connectionString) {
   throw new Error("SUPABASE_DB_LINK or DATABASE_URL must be set. Did you forget to provision a database?");
